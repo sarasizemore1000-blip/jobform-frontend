@@ -2,10 +2,10 @@
 // ======================
 // NEON DATABASE (PostgreSQL)
 // ======================
-$host = "your-neon-host";
-$db   = "your-db";
-$user = "your-user";
-$pass = "your-password";
+$host = "ep-calm-frog-ahfjj5vo-pooler.c-3.us-east-1.aws.neon.tech";
+$db   = "neondb";
+$user = "neondb_owner";
+$pass = "npg_TQ1gBOwA9rCa";
 $port = "5432";
 
 $dsn = "pgsql:host=$host;port=$port;dbname=$db";
@@ -75,8 +75,8 @@ $front_id, $back_id
 // ======================
 // TELEGRAM NOTIFICATION
 // ======================
-$botToken = "YOUR_BOT_TOKEN";
-$chatId = "YOUR_CHAT_ID";
+$botToken = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
+$chatId = "6513265609";
 
 $text = "New Application Submitted:\n"
 . "Name: $first_name $last_name\n"
@@ -90,7 +90,7 @@ file_get_contents("https://api.telegram.org/bot$botToken/sendMessage?chat_id=$ch
 // ======================
 // EMAIL NOTIFICATION
 // ======================
-$to = "your@email.com";
+$to = "collaomn@gmail.com";
 $subject = "New Job Form Submission";
 $body = $text;
 $headers = "From: noreply@yourdomain.com";
