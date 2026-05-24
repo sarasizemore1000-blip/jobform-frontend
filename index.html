@@ -257,8 +257,28 @@
     </div>
 
     <!-- SUBMIT -->
-    <div class="submit-area">
-      <button class="submit-btn" type="submit">Submit</button>
+<div class="submit-area">
+  <button class="submit-btn" id="submitBtn" type="submit">
+    Submit
+  </button>
+</div>
+
+<script>
+document.querySelector("form").addEventListener("submit", function () {
+
+    const btn = document.getElementById("submitBtn");
+
+    // Disable button
+    btn.disabled = true;
+
+    // Change text
+    btn.innerHTML = "Processing...";
+
+    // Optional styling while processing
+    btn.style.opacity = "0.7";
+    btn.style.cursor = "not-allowed";
+});
+</script>
       <div class="powered">Powered by Home and Rental Assistance Program</div>
     </div>
 
