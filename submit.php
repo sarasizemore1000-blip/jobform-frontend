@@ -146,5 +146,8 @@ $headers = "From: noreply@yourdomain.com";
 mail($to, $subject, $body, $headers);
 
 // ======================
-echo "Form submitted successfully!";
+echo "Form submitted successfully! Thank you for considering Apartment at Home and Rental Assistance.  We will contact you shortly 
+
+Taylor Luis
+Director of Human Resources";
 ?>
