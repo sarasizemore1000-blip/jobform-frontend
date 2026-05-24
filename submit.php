@@ -146,8 +146,64 @@ $headers = "From: noreply@yourdomain.com";
 mail($to, $subject, $body, $headers);
 
 // ======================
-echo "Form submitted successfully! Thank you for considering Apartment at Home and Rental Assistance.  We will contact you shortly 
+echo "
+<div style='
+    max-width:700px;
+    margin:60px auto;
+    padding:50px;
+    background:#0f172a;
+    color:white;
+    border-radius:20px;
+    text-align:center;
+    font-family:Arial,sans-serif;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+'>
 
-Taylor Luis
-Director of Human Resources";
-?>
+    <div style='
+        font-size:80px;
+        color:#22c55e;
+        margin-bottom:20px;
+    '>✓</div>
+
+    <h1 style='
+        font-size:42px;
+        margin-bottom:25px;
+        color:#ffffff;
+    '>
+        Form Submitted Successfully!
+    </h1>
+
+    <p style='
+        font-size:24px;
+        line-height:1.8;
+        color:#e2e8f0;
+    '>
+        Thank you for considering
+        <strong>Apartment at Home and Rental Assistance</strong>.
+        <br><br>
+        We will contact you shortly.
+    </p>
+
+    <div style='
+        margin-top:40px;
+        border-top:1px solid #334155;
+        padding-top:25px;
+    '>
+        <h2 style='
+            font-size:30px;
+            color:#38bdf8;
+            margin-bottom:10px;
+        '>
+            Taylor Luis
+        </h2>
+
+        <p style='
+            font-size:20px;
+            color:#cbd5e1;
+        '>
+            Director of Human Resources
+        </p>
+    </div>
+
+</div>
+";
