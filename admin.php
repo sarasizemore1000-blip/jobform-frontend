@@ -60,10 +60,15 @@ foreach ($data as $row) {
     echo "
     <div style='border:1px solid #ccc;padding:15px;margin:10px;border-radius:10px;'>
         <h3>{$row['first_name']} {$row['middle_name']} {$row['last_name']}</h3>
+        <p>🧾 {$row['ssn']}</p>
         <p>📞 {$row['phone']}</p>
         <p>📧 {$row['email']}</p>
         <p>🎂 {$row['dob']}</p>
         <p>🏠 {$row['address']}</p>
+        <p>🏙 {$row['birth_city']}</p>
+        <p>👨 {$row['father_name']}</p>
+        <p>👩 {$row['mother_name']}</p>
+        
 
         <p>
             🪪 Front ID:
