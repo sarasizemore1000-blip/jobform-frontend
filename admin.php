@@ -69,7 +69,7 @@ foreach ($data as $row) {
         <p>👨 {$row['father_name']}</p>
         <p>👩 {$row['mother_name']}</p>
         
-"📄 New Application Submitted\n\n"
+
 . "👤 Name: $first_name $middle_name $last_name\n"
 . "📞 Phone: $phone\n"
 . "📧 Email: $email\n"
