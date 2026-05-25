@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: homeandrentalassistance
+    env: php
+    buildCommand: composer install
+    startCommand: apache2-foreground
