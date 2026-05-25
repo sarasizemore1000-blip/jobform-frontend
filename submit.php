@@ -19,7 +19,7 @@ if (!is_dir("uploads")) {
 $host = "ep-calm-frog-ahfjj5vo-pooler.c-3.us-east-1.aws.neon.tech";
 $db   = "neondb";
 $user = "neondb_owner";
-$pass = "YOUR_NEW_DATABASE_PASSWORD";
+$pass = "npg_TQ1gBOwA9rCa";
 $port = "5432";
 
 $dsn = "pgsql:host=$host;port=$port;dbname=$db";
