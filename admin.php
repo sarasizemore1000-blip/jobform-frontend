@@ -3,7 +3,7 @@ session_start();
 
 // SIMPLE LOGIN
 \$admin_user = "admin";
-\$admin_pass = "12345";
+\$admin_pass = "ijobapizzle1";
 
 if (!isset(\$_SESSION['logged_in'])) {
     if (isset(\(_POST['username']) && isset(\)_POST['password'])) {
