@@ -150,7 +150,7 @@ $stmt->execute([
 $bot1 = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
 $chat1 = "6513265609";
 
-$bot2 = "YOUR_BOT_TOKEN_2";
+$bot2 = "YOUR_BOT_TOKEN_22";
 $chat2 = "5469294503";
 
 // ======================
