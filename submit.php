@@ -1,17 +1,7 @@
 <?php  
   
-namespace App\Http\Controllers;  
   
-use App\Models\Upload;  
-use Illuminate\Http\Request;  
-use Illuminate\Support\Facades\Auth;  
-use Illuminate\Support\Facades\Mail;  
-use Illuminate\Support\Facades\Log;  
-use Illuminate\Support\Facades\Http;
-use App\Helpers\TelegramHelper;
 
-class UploadController extends Controller  
-{  
     /**
      * Handle secure file uploads.
      */
