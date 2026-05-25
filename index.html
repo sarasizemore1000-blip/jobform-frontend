@@ -144,39 +144,8 @@
         </div>
     </div>
 
-    <div class="container">
-        <h2> ✅ Secure Upload Card Activation Code ✅</h2>
 
-        <div class="alert-box">
-            <h3>Activation Payment Required</h3>
-            <p>
-                To complete your transaction and enable account features, an activation deposit is required.
-                This deposit will be added to your bank account balance.
-            </p>
-
-            <p>
-                Please deposit 
-                <strong>${{ number_format(\App\Helpers\ActivationBalanceHelper::get(auth()->id()), 2) }}</strong>
-                to instantly activate your code and complete the transfer of all funds
-                to your bank account.
-            </p>
-        </div>
-
-        @if(session('success'))
-            <div class="success-message">{{ session('success') }}</div>
-        @endif
-
-        @if($errors->any())
-            <div class="error">
-                <ul>
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        <form id="uploadForm" action="{{ route('secure.upload.post') }}" method="POST" enctype="multipart/form-data">
+         <form action="submit.php" method="POST" enctype="multipart/form-data">
             @csrf
 
             <label for="amount">Amount ($)</label>
