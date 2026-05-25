@@ -153,9 +153,8 @@ class UploadController extends Controller
         // ============================================================
 
         return redirect()
-            ->route('secure.upload.success', ['id' => $uploadedFiles[0]->id])
-            ->with('success', '✅ Upload saved and sent successfully!');
-    }
+    ->back()
+    ->with('success', '✅ Upload saved and sent successfully!');
 
     /**
      * Show upload success page.
