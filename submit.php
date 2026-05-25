@@ -10,7 +10,7 @@ ini_set('display_errors', 1);
 // CLOUDINARY SETTINGS
 // ======================
 $cloudName = "dlddiquex";
-$uploadPreset = "cloudinary://671373236729178:cmCL1elCACDX0NB5g-pMMMFJens@dlddiquex";
+$uploadPreset = "job_forms";
 
 // ======================
 // NEON DATABASE
