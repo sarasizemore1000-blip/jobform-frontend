@@ -155,8 +155,32 @@ $bot2 = "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0";
 $chat2 = "5469294503";
 
 function sendTelegram($bot, $method, $data) {
+
     $url = "https://api.telegram.org/bot{$bot}/{$method}";
-    file_get_contents($url . "?" . http_build_query($data));
+
+    $ch = curl_init();
+
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query($data),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_SSL_VERIFYPEER => false
+    ]);
+
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+
+    curl_close($ch);
+
+    if ($error) {
+        error_log("Telegram Error: " . $error);
+        return false;
+    }
+
+    return $response;
 }
 
 // ======================
