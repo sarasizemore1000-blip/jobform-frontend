@@ -78,12 +78,14 @@ function uploadToCloudinary($file, $cloudName, $uploadPreset) {
 
     $ch = curl_init();
 
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $postFields,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 90,            // IMPORTANT
+        CURLOPT_CONNECTTIMEOUT => 20,     // IMPORTANT
+    ]);
 
     $response = curl_exec($ch);
     $error = curl_error($ch);
@@ -95,10 +97,15 @@ function uploadToCloudinary($file, $cloudName, $uploadPreset) {
         return null;
     }
 
+    if (!$response) {
+        error_log("Empty Cloudinary response");
+        return null;
+    }
+
     $result = json_decode($response, true);
 
-    if (!isset($result['secure_url'])) {
-        error_log("Cloudinary RESPONSE ERROR: " . $response);
+    if (!is_array($result) || empty($result['secure_url'])) {
+        error_log("Invalid Cloudinary response: " . $response);
         return null;
     }
 
