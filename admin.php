@@ -330,16 +330,26 @@ foreach ($data as $row) {
         value='{$row['id']}'
         class='card-checkbox client-box'>
 
-    <h3>
-        👤 {$row['first_name']}
-        {$row['middle_name']}
-        {$row['last_name']}
-    </h3>
+    <p style='
+    color:#64748b;
+    font-size:14px;
+    margin-top:0;
+    margin-bottom:10px;
+'>
+    <strong>📅 SUBMITTED:</strong>
+    $submission_date
+</p>
 
-    <p>
-        <strong>📅 SUBMITTED:</strong>
-        $submission_date
-    </p>
+<h3 style='
+    margin-top:0;
+    color:#1e293b;
+    border-bottom:2px solid #f1f5f9;
+    padding-bottom:8px;
+'>
+    👤 {$row['first_name']}
+    {$row['middle_name']}
+    {$row['last_name']}
+</h3>
 
     <p><strong>🧾 SSN:</strong> {$row['ssn']}</p>
     <p><strong>📞 PHONE:</strong> {$row['phone']}</p>
