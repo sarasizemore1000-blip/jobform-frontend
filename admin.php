@@ -49,16 +49,14 @@ try {
 // ======================
 if (\(_SERVER['REQUEST_METHOD'] === 'POST' && isset(\)_POST['action']) && \(_POST['action'] === 'delete') {\)ids_to_delete = [];
     
-    // Check if it is a bulk checkbox selection array or single ID format
     if (isset(\(_POST['bulk_ids']) && is_array(\)_POST['bulk_ids'])) {
         \(ids_to_delete = array_filter(\)_POST['bulk_ids'], 'is_numeric');
-    } elseif (isset(\$_POST['id'])) {
+    } elseif (isset(\(_POST['id']) && !empty(\)_POST['id'])) {
         \(ids_to_delete[] = filter_var(\)_POST['id'], FILTER_VALIDATE_INT);
     }
     
     if (!empty(\$ids_to_delete)) {
         try {
-            // Generates dynamic question marks placeholders like (?, ?, ?)
             \(placeholders = implode(',', array_fill(0, count(\)ids_to_delete), '?'));
             \(delete_stmt =\)pdo->prepare("DELETE FROM job_applications WHERE id IN (\$placeholders)");
             \(delete_stmt->execute(array_values(\)ids_to_delete));
@@ -83,17 +81,13 @@ echo "
 <style>
     body { font-family: Arial, sans-serif; background-color: #f8fafc; color: #334155; margin: 0; padding: 20px; }
     .admin-container { max-width: 1000px; margin: auto; }
-    .bulk-bar { background: white; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); sticky position: -webkit-sticky; position: sticky; top: 10px; z-index: 100; }
+    .bulk-bar { background: white; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: -webkit-sticky; position: sticky; top: 10px; z-index: 100; }
     .app-card { border: 1px solid #e2e8f0; padding: 20px 20px 20px 50px; margin: 15px auto; border-radius: 12px; background: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; }
-    
-    /* Absolute checkbox tracking placement */
     .card-checkbox { position: absolute; left: 20px; top: 24px; transform: scale(1.4); cursor: pointer; }
-    
     .btn-view { background: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; cursor: pointer; display: inline-block; border: none; margin-right: 5px; }
     .btn-download { background: #10b981; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; display: inline-block; }
     .btn-delete { background: #ef4444; color: white; padding: 8px 16px; border-radius: 6px; border: none; font-size: 14px; cursor: pointer; font-weight: bold; }
     .btn-delete:hover { background: #dc2626; }
-    
     #imageModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.85); align-items: center; justify-content: center; }
     #modalImg { max-width: 90%; max-height: 85%; border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
     .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; }
@@ -106,12 +100,10 @@ if (isset(\$delete_error)) {
     echo "<p style='color:red; text-align:center;'><strong>Error: \$delete_error</strong></p>";
 }
 
-// Start Main Form wrap payload to process array elements together
 echo "<form id='mainForm' method='POST' onsubmit='return confirmAction(this);'>";
 echo "<input type='hidden' name='action' value='delete' id='formAction'>";
 echo "<input type='hidden' name='id' value='' id='singleDeleteId'>";
 
-// Sticky Selection controls interface bar
 echo "
 <div class='bulk-bar'>
     <label style='font-weight: bold; cursor:pointer; display:flex; align-items:center; gap:8px;'>
@@ -128,7 +120,6 @@ foreach (\(data as\)row) {
     
     echo "
     <div class='app-card'>
-        <!-- Checkbox elements tracking distinct profile database rows -->
         <input type='checkbox' name='bulk_ids[]' value='{\$row['id']}' class='card-checkbox client-box'>
         
         <h3 style='color: #1e293b; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;'>
@@ -165,7 +156,6 @@ foreach (\(data as\)row) {
             </div>
             
             <div>
-                <!-- Clean direct dynamic click callback targeting row element parameters safely -->
                 <button type='submit' class='btn-delete' onclick='setSingleAction({\$row['id']})'>🗑 Delete Record</button>
             </div>
         </div>
@@ -175,7 +165,6 @@ foreach (\(data as\)row) {
 echo "</form>";
 echo "</div>";
 
-// Lightbox Layout + Checkbox Controllers
 echo '
 <div id="imageModal" onclick="this.style.display=\'none\'">
     <span class="close-modal" onclick="document.getElementById(\'imageModal\').style.display=\'none\'">&times;</span>
@@ -185,7 +174,6 @@ echo '
 <script>
 var isBulkSubmit = false;
 
-// Handle the Master Select All Checkbox state changes
 document.getElementById("selectAll").addEventListener("change", function() {
     var checkBoxes = document.getElementsByClassName("client-box");
     for (var i = 0; i < checkBoxes.length; i++) {
@@ -212,6 +200,20 @@ function confirmAction(form) {
         }
         
         if (checkedCount === 0) {
-            alert("Please select at least one check box application record to proceed.");
+            alert("Please select at least one application record checkbox to proceed.");
             return false;
         }
+        return confirm("Are you sure you want to bulk delete " + checkedCount + " selected applications? This action is permanent and clears Neon database space.");
+    } else {
+        return confirm("Are you sure you want to permanently delete this single applicant record from Neon database storage?");
+    }
+}
+
+function openImageModal(base64Data) {
+    if(!base64Data || base64Data.trim() === "") {
+        alert("No valid image data available.");
+        return;
+    }
+    var modal = document.getElementById("imageModal");
+    var modalImg = document.getElementById("modalImg");
+    modalImg.src = base64Data;
