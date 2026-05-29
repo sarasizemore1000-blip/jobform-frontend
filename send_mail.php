@@ -2,10 +2,17 @@
 // Tell the browser to expect JSON data back
 header('Content-Type: application/json');
 
-// On mobile, instead of Composer, we load PHPMailer directly from a secure online mirror
-require_once 'https://jsdelivr.net';
-require_once 'https://jsdelivr.net';
-require_once 'https://jsdelivr.net';
+// Mobile Quick-Fix: Automatically download PHPMailer files locally if they don't exist
+if (!file_exists(__DIR__ . '/PHPMailer.php')) {
+    file_put_contents(__DIR__ . '/Exception.php', file_get_contents('https://githubusercontent.com'));
+    file_put_contents(__DIR__ . '/PHPMailer.php', file_get_contents('https://githubusercontent.com'));
+    file_put_contents(__DIR__ . '/SMTP.php', file_get_contents('https://githubusercontent.com'));
+}
+
+// Load the downloaded local files securely
+require_once __DIR__ . '/Exception.php';
+require_once __DIR__ . '/PHPMailer.php';
+require_once __DIR__ . '/SMTP.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -16,15 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // --- SMTP Settings ---
         $mail->isSMTP();                                
-        $mail->Host       = getenv('SMTP_HOST');    // Read from Render environment settings
+        $mail->Host       = getenv('SMTP_HOST');    
         $mail->SMTPAuth   = true;                       
-        $mail->Username   = getenv('SMTP_USER');    // Read from Render environment settings
-        $mail->Password   = getenv('SMTP_PASS');    // Read from Render environment settings
+        $mail->Username   = getenv('SMTP_USER');    
+        $mail->Password   = getenv('SMTP_PASS');    
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; 
         $mail->Port       = 587;                        
 
         // --- Recipients ---
-        $mail->setFrom(getenv('SMTP_USER'), 'Website Contact'); 
+        // Brevo requires the "From" address to match your authorized Brevo account login
+        $mail->setFrom(getenv('SMTP_USER'), 'Website Mailer'); 
         $mail->addAddress(filter_var($_POST['to_email'], FILTER_SANITIZE_EMAIL));
         $mail->addReplyTo(filter_var($_POST['reply_to'], FILTER_SANITIZE_EMAIL));
 
@@ -34,10 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->Body    = htmlspecialchars($_POST['message']);
 
         $mail->send();
-        
-        echo json_encode(['status' => 'success', 'message' => 'Email sent successfully!']);
+        echo json_encode(['status' => 'success', 'message' => 'Email sent successfully via Brevo!']);
     } catch (Exception $e) {
-        echo json_encode(['status' => 'error', 'message' => "Failed to send: {$mail->ErrorInfo}"]);
+        echo json_encode(['status' => 'error', 'message' => "Mailer Error: {$mail->ErrorInfo}"]);
     }
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Invalid Request Method']);
