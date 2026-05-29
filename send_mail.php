@@ -8,7 +8,11 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 if (isset($_POST['submit'])) {
-    $mail = new PHPMailer(true);
+        $mail = new PHPMailer(true);
+    
+    // ADD THIS LINE TO SEE VISUAL DEBUG DETAILS
+    $mail->SMTPDebug = 2; 
+
 
     try {
         // --- SMTP Settings ---
@@ -18,7 +22,7 @@ if (isset($_POST['submit'])) {
         $mail->Username   = getenv('SMTP_USER');    
         $mail->Password   = getenv('SMTP_PASS');    
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; 
-        $mail->Port       = 587;                        
+        $mail->Port       = 465;                        
 
         // --- Sanitizing Inputs ---
         $fromEmail    = filter_var($_POST['from_email'], FILTER_SANITIZE_EMAIL);
