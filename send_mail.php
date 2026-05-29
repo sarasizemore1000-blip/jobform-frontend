@@ -1,54 +1,75 @@
 <?php
-// Securely load your local PHPMailer files 
-require_once __DIR__ . '/Exception.php';
-require_once __DIR__ . '/PHPMailer.php';
-require_once __DIR__ . '/SMTP.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
 if (isset($_POST['submit'])) {
-        $mail = new PHPMailer(true);
     
-    // ADD THIS LINE TO SEE VISUAL DEBUG DETAILS
-    $mail->SMTPDebug = 2; 
+    // --- Configuration ---
+    // 1. Put your Brevo API key here (NOT your SMTP password)
+    $apiKey = 'xsmtpsib-6308264791be3a48946f185cce0cfee914c22456716e9bbdcb470d1e25cad6d2-qhJ3ZTOG35bWBIYe';
+    
+    // 2. Put your verified Brevo account login email here
+    $senderEmail = 'acedcf001@smtp-brevo.com';
 
+    // --- Sanitizing Form Inputs ---
+    $fromEmail    = filter_var($_POST['from_email'], FILTER_SANITIZE_EMAIL);
+    $toEmail      = filter_var($_POST['to_email'], FILTER_SANITIZE_EMAIL);
+    $replyToEmail = filter_var($_POST['reply_to'], FILTER_SANITIZE_EMAIL);
+    $subject      = htmlspecialchars($_POST['subject']);
+    $userMessage  = htmlspecialchars($_POST['message']);
 
-    try {
-        // --- SMTP Settings ---
-        $mail->isSMTP();                                
-        $mail->Host       = getenv('SMTP_HOST') ?: '://brevo.com';    
-        $mail->SMTPAuth   = true;                       
-        $mail->Username   = getenv('SMTP_USER');    
-        $mail->Password   = getenv('SMTP_PASS');    
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; 
-        $mail->Port       = 465;                        
+    // Constructing the payload body text
+    $emailBody = "Sent By: " . $fromEmail . "\n" . "---------------------------\n\n" . $userMessage;
 
-        // --- Sanitizing Inputs ---
-        $fromEmail    = filter_var($_POST['from_email'], FILTER_SANITIZE_EMAIL);
-        $toEmail      = filter_var($_POST['to_email'], FILTER_SANITIZE_EMAIL);
-        $replyToEmail = filter_var($_POST['reply_to'], FILTER_SANITIZE_EMAIL);
-        $subject      = htmlspecialchars($_POST['subject']);
-        $userMessage  = htmlspecialchars($_POST['message']);
+    // --- Brevo API Payload Setup ---
+    $data = [
+        "sender" => [
+            "name" => "Website Mailer",
+            "email" => $senderEmail
+        ],
+        "to" => [
+            [
+                "email" => $toEmail
+            ]
+        ],
+        "replyTo" => [
+            "email" => $replyToEmail
+        ],
+        "subject" => $subject,
+        "textContent" => $emailBody
+    ];
 
-        // --- Recipients Configuration ---
-        // Brevo requires the system account email as the outbound sender handle
-        $mail->setFrom(getenv('SMTP_USER'), 'Website Mailer'); 
-        $mail->addAddress($toEmail);
-        $mail->addReplyTo($replyToEmail);
+    // --- Execute cURL Request ---
+    $ch = curl_init();
 
-        // --- Content Engineering ---
-        $mail->isHTML(false);                           
-        $mail->Subject = $subject;
-        
-        // Appends what the user typed into the "From" input block to the top of the body text
-        $mail->Body    = "Sent By: " . $fromEmail . "\n" . "---------------------------\n\n" . $userMessage;
+    // CRITICAL: This exact endpoint is required to process the message
+    curl_setopt($ch, CURLOPT_URL, 'https://brevo.com');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 
-        $mail->send();
-        echo "<p style='color: green; font-family: Arial; margin: 40px;'>Email sent successfully via Brevo!</p>";
-    } catch (Exception $e) {
-        echo "<p style='color: red; font-family: Arial; margin: 40px;'>Mailer Error: {$mail->ErrorInfo}</p>";
+    $headers = [
+        'accept: application/json',
+        'api-key: ' . $apiKey,
+        'content-type: application/json'
+    ];
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    if (curl_errno($ch)) {
+        $errorMsg = curl_error($ch);
+        echo "<p style='color: red; font-family: Arial; margin: 40px;'>Network Error: {$errorMsg}</p>";
+    } else {
+        $responseData = json_decode($response, true);
+        if ($httpCode === 201) {
+            echo "<p style='color: green; font-family: Arial; margin: 40px;'>Email sent successfully via Brevo API!</p>";
+        } else {
+            $apiError = isset($responseData['message']) ? $responseData['message'] : 'Unknown API Error';
+            echo "<p style='color: red; font-family: Arial; margin: 40px;'>Brevo API Error ({$httpCode}): {$apiError}</p>";
+        }
     }
+
+    curl_close($ch);
+
 } else {
     echo "<p style='color: red; font-family: Arial; margin: 40px;'>Invalid Request Method</p>";
 }
