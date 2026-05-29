@@ -6,7 +6,7 @@ if (isset($_POST['submit'])) {
     $apiKey = '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';
     
     // 2. Put your verified Brevo account login email here
-    $senderEmail = 'collaomn@gmail.com';
+    $senderEmail = 'acedcf001@smtp-brevo.com';
 
     // --- Sanitizing Form Inputs ---
     $fromEmail    = filter_var($_POST['from_email'], FILTER_SANITIZE_EMAIL);
